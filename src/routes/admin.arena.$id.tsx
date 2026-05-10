@@ -57,9 +57,9 @@ function ArenaDetailPage() {
     }
     setArena(a as Arena | null);
     const [{ data: b, error: bErr }, { data: c, error: cErr }, { data: bo, error: boErr }, { data: ur, error: urErr }] = await Promise.all([
-      supabase.from("arena_buttons").select("id,label").eq("arena_id", id).order("label"),
+      supabase.from("arena_buttons").select("id,label,board_id,button_number,hardware_pin,camera_id").eq("arena_id", id).order("button_number", { ascending: true }),
       supabase.from("cameras").select("id,name,rtsp_url,button_id").eq("arena_id", id).order("name"),
-      supabase.from("zero_delay_boards").select("id,name,serial").eq("arena_id", id).order("name"),
+      supabase.from("zero_delay_boards").select("id,name,serial,model").eq("arena_id", id).order("name"),
       supabase.from("user_roles").select("user_id,role").eq("arena_id", id),
     ]);
     const firstError = bErr ?? cErr ?? boErr ?? urErr;
