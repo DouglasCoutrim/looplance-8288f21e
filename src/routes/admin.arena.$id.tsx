@@ -356,12 +356,13 @@ function CameraButtonChange({ camera, buttons, availableButtons, onChange }:
   );
 }
 
-function BoardsCard({ arenaId, boards, onChange }: { arenaId: string; boards: BoardRow[]; onChange: () => void }) {
+function BoardsCard({ arenaId, boards, buttons, cameras, onChange }: { arenaId: string; boards: BoardRow[]; buttons: BtnRow[]; cameras: CamRow[]; onChange: () => void }) {
   const [name, setName] = useState("");
   const [serial, setSerial] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [eName, setEName] = useState("");
   const [eSerial, setESerial] = useState("");
+  const cameraName = (id: string | null) => cameras.find((c) => c.id === id)?.name ?? "—";
   return (
     <Card className="p-6">
       <div className="mb-4 flex items-center justify-between">
