@@ -36,19 +36,30 @@ function ArenaDetailPage() {
   const [cameras, setCameras] = useState<CamRow[]>([]);
   const [boards, setBoards] = useState<BoardRow[]>([]);
   const [users, setUsers] = useState<UserRow[]>([]);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   async function load() {
-    const { data: a } = await supabase
+    setPageLoading(true);
+    setLoadError(null);
+    const { data: a, error: arenaError } = await supabase
       .from("arenas")
       .select("id,name,slug,supabase_url,supabase_service_key,logo_url,primary_color")
       .eq("id", id).maybeSingle();
+    if (arenaError) {
+      setLoadError(arenaError.message);
+      setPageLoading(false);
+      return;
+    }
     setArena(a as Arena | null);
-    const [{ data: b }, { data: c }, { data: bo }, { data: ur }] = await Promise.all([
+    const [{ data: b, error: bErr }, { data: c, error: cErr }, { data: bo, error: boErr }, { data: ur, error: urErr }] = await Promise.all([
       supabase.from("arena_buttons").select("id,label").eq("arena_id", id).order("label"),
       supabase.from("cameras").select("id,name,rtsp_url,button_id").eq("arena_id", id).order("name"),
       supabase.from("zero_delay_boards").select("id,name,serial").eq("arena_id", id).order("name"),
       supabase.from("user_roles").select("user_id,role").eq("arena_id", id),
     ]);
+    const firstError = bErr ?? cErr ?? boErr ?? urErr;
+    if (firstError) setLoadError(firstError.message);
     setButtons((b ?? []) as BtnRow[]);
     setCameras((c ?? []) as CamRow[]);
     setBoards((bo ?? []) as BoardRow[]);
@@ -59,6 +70,7 @@ function ArenaDetailPage() {
       const map = new Map((profs ?? []).map((p: any) => [p.id, p.full_name]));
       setUsers(rows.map((r) => ({ ...r, full_name: map.get(r.user_id) ?? null })));
     } else setUsers([]);
+    setPageLoading(false);
   }
 
   useEffect(() => { if (isSuperAdmin) load(); }, [isSuperAdmin, id]);
@@ -66,7 +78,8 @@ function ArenaDetailPage() {
   if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   if (!user) return <Navigate to="/login" />;
   if (!isSuperAdmin) return <Navigate to="/acesso-negado" />;
-  if (!arena) return <AppShell><p className="text-muted-foreground">Carregando arena...</p></AppShell>;
+  if (pageLoading) return <AppShell><div className="flex min-h-[50vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></AppShell>;
+  if (!arena) return <AppShell><p className="text-muted-foreground">Arena não encontrada.</p></AppShell>;
 
   const usedBtnIds = new Set(cameras.map((c) => c.button_id).filter(Boolean) as string[]);
   const availableButtons = buttons.filter((b) => !usedBtnIds.has(b.id));
@@ -83,6 +96,12 @@ function ArenaDetailPage() {
           </div>
         </div>
       </div>
+
+      {loadError && (
+        <Card className="mb-4 border-destructive/50 p-4 text-sm text-destructive">
+          Erro ao carregar parte da configuração: {loadError}
+        </Card>
+      )}
 
       <Tabs defaultValue="infra" className="w-full">
         <TabsList className="mb-4 flex flex-wrap">
