@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +22,7 @@ interface ArenaRow {
 }
 
 function AdminPage() {
+  const path = useRouterState({ select: (state) => state.location.pathname });
   const { user, loading, isSuperAdmin } = useAuth();
   const [arenas, setArenas] = useState<ArenaRow[]>([]);
   const [name, setName] = useState("");
@@ -46,6 +47,7 @@ function AdminPage() {
   if (loading) return <FullLoader />;
   if (!user) return <Navigate to="/login" />;
   if (!isSuperAdmin) return <Navigate to="/acesso-negado" />;
+  if (path !== "/admin") return <Outlet />;
 
   async function createArena(e: React.FormEvent) {
     e.preventDefault();
