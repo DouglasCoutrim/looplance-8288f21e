@@ -23,9 +23,13 @@ interface Arena {
   logo_url: string | null;
   primary_color: string;
 }
-interface BtnRow { id: string; label: string }
+interface BtnRow {
+  id: string; label: string;
+  board_id: string | null; button_number: number | null;
+  hardware_pin: string | null; camera_id: string | null;
+}
 interface CamRow { id: string; name: string; rtsp_url: string; button_id: string | null }
-interface BoardRow { id: string; name: string; serial: string }
+interface BoardRow { id: string; name: string; serial: string; model: string }
 interface UserRow { user_id: string; role: string; full_name: string | null }
 
 function ArenaDetailPage() {
