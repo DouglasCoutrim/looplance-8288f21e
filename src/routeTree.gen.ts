@@ -16,6 +16,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ASlugRouteImport } from './routes/a.$slug'
+import { Route as AdminArenaIdRouteImport } from './routes/admin.arena.$id'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -52,34 +53,42 @@ const ASlugRoute = ASlugRouteImport.update({
   path: '/a/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminArenaIdRoute = AdminArenaIdRouteImport.update({
+  id: '/arena/$id',
+  path: '/arena/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRoute
   '/arena': typeof ArenaRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/a/$slug': typeof ASlugRoute
+  '/admin/arena/$id': typeof AdminArenaIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRoute
   '/arena': typeof ArenaRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/a/$slug': typeof ASlugRoute
+  '/admin/arena/$id': typeof AdminArenaIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRoute
   '/arena': typeof ArenaRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/a/$slug': typeof ASlugRoute
+  '/admin/arena/$id': typeof AdminArenaIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,8 +100,17 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/a/$slug'
+    | '/admin/arena/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/app' | '/arena' | '/login' | '/signup' | '/a/$slug'
+  to:
+    | '/'
+    | '/admin'
+    | '/app'
+    | '/arena'
+    | '/login'
+    | '/signup'
+    | '/a/$slug'
+    | '/admin/arena/$id'
   id:
     | '__root__'
     | '/'
@@ -102,11 +120,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/a/$slug'
+    | '/admin/arena/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AppRoute: typeof AppRoute
   ArenaRoute: typeof ArenaRoute
   LoginRoute: typeof LoginRoute
@@ -165,12 +184,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ASlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/arena/$id': {
+      id: '/admin/arena/$id'
+      path: '/arena/$id'
+      fullPath: '/admin/arena/$id'
+      preLoaderRoute: typeof AdminArenaIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminArenaIdRoute: typeof AdminArenaIdRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminArenaIdRoute: AdminArenaIdRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   AppRoute: AppRoute,
   ArenaRoute: ArenaRoute,
   LoginRoute: LoginRoute,
@@ -180,3 +216,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
