@@ -16,7 +16,13 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+    const stopLoadingFallback = window.setTimeout(() => {
+      if (mounted) setLoading(false);
+    }, 5000);
+
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      if (!mounted) return;
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
@@ -26,21 +32,36 @@ export function useAuth() {
         setLoading(false);
       }
     });
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) fetchRoles(s.user.id);
-      else setLoading(false);
-    });
-    return () => sub.subscription.unsubscribe();
+
+    supabase.auth.getSession()
+      .then(({ data: { session: s } }) => {
+        if (!mounted) return;
+        setSession(s);
+        setUser(s?.user ?? null);
+        if (s?.user) fetchRoles(s.user.id);
+        else setLoading(false);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setSession(null);
+        setUser(null);
+        setRoles([]);
+        setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+      window.clearTimeout(stopLoadingFallback);
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   async function fetchRoles(userId: string) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("user_roles")
       .select("role, arena_id")
       .eq("user_id", userId);
-    setRoles((data ?? []) as UserRole[]);
+    setRoles(error ? [] : ((data ?? []) as UserRole[]));
     setLoading(false);
   }
 
