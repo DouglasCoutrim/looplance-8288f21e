@@ -117,8 +117,8 @@ function ArenaDetailPage() {
 
         <TabsContent value="infra" className="space-y-6">
           <ConnectionCard arena={arena} onSaved={load} />
-          <BoardsCard arenaId={id} boards={boards} onChange={load} />
-          <ButtonsCard arenaId={id} buttons={buttons} usedIds={usedBtnIds} onChange={load} />
+          <BoardsCard arenaId={id} boards={boards} buttons={buttons} cameras={cameras} onChange={load} />
+          <ButtonsCard arenaId={id} buttons={buttons.filter((b) => !b.board_id)} usedIds={usedBtnIds} onChange={load} />
         </TabsContent>
 
         <TabsContent value="cameras">
