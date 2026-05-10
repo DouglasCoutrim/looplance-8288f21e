@@ -366,7 +366,10 @@ function BoardsCard({ arenaId, boards, buttons, cameras, onChange }: { arenaId: 
   return (
     <Card className="p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Placas Zero Delay</h2>
+        <div>
+          <h2 className="text-lg font-semibold">Placas Zero Delay (ARC-968)</h2>
+          <p className="text-sm text-muted-foreground">Cada placa cadastrada gera automaticamente os 12 botões físicos (K1–K12).</p>
+        </div>
       </div>
       <form className="mb-4 grid gap-2 md:grid-cols-[1fr_1fr_auto]" onSubmit={async (e) => {
         e.preventDefault();
@@ -378,47 +381,66 @@ function BoardsCard({ arenaId, boards, buttons, cameras, onChange }: { arenaId: 
         <Input value={serial} onChange={(e) => setSerial(e.target.value)} placeholder="ID / Serial" required />
         <Button type="submit">Adicionar placa</Button>
       </form>
-      <div className="overflow-hidden rounded-lg border border-border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/40 text-left text-xs uppercase text-muted-foreground">
-            <tr><th className="p-3">Nome</th><th className="p-3">Serial</th><th className="p-3"></th></tr>
-          </thead>
-          <tbody>
-            {boards.map((b) => (
-              <tr key={b.id} className="border-t border-border">
+
+      <div className="space-y-4">
+        {boards.map((b) => {
+          const boardButtons = buttons.filter((btn) => btn.board_id === b.id)
+            .sort((a, c) => (a.button_number ?? 0) - (c.button_number ?? 0));
+          return (
+            <div key={b.id} className="rounded-lg border border-border p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
                 {editId === b.id ? (
-                  <>
-                    <td className="p-2"><Input value={eName} onChange={(e) => setEName(e.target.value)} /></td>
-                    <td className="p-2"><Input value={eSerial} onChange={(e) => setESerial(e.target.value)} /></td>
-                    <td className="p-2 text-right">
-                      <Button size="icon" variant="ghost" onClick={async () => {
-                        const { error } = await supabase.from("zero_delay_boards").update({ name: eName, serial: eSerial }).eq("id", b.id);
-                        if (error) return toast.error(error.message);
-                        setEditId(null); onChange();
-                      }}><Check className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => setEditId(null)}><X className="h-4 w-4" /></Button>
-                    </td>
-                  </>
+                  <div className="flex flex-1 gap-2">
+                    <Input value={eName} onChange={(e) => setEName(e.target.value)} />
+                    <Input value={eSerial} onChange={(e) => setESerial(e.target.value)} />
+                    <Button size="icon" variant="ghost" onClick={async () => {
+                      const { error } = await supabase.from("zero_delay_boards").update({ name: eName, serial: eSerial }).eq("id", b.id);
+                      if (error) return toast.error(error.message);
+                      setEditId(null); onChange();
+                    }}><Check className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => setEditId(null)}><X className="h-4 w-4" /></Button>
+                  </div>
                 ) : (
                   <>
-                    <td className="p-3 font-medium">{b.name}</td>
-                    <td className="p-3 text-muted-foreground">{b.serial}</td>
-                    <td className="p-3 text-right">
+                    <div>
+                      <p className="font-semibold">{b.name} <span className="text-xs text-muted-foreground">· {b.model ?? "ARC-968"}</span></p>
+                      <p className="text-xs text-muted-foreground">Serial: {b.serial}</p>
+                    </div>
+                    <div className="flex gap-1">
                       <Button size="icon" variant="ghost" onClick={() => { setEditId(b.id); setEName(b.name); setESerial(b.serial); }}><Pencil className="h-4 w-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={async () => {
-                        if (!confirm("Remover placa?")) return;
+                        if (!confirm("Remover placa? Os 12 botões dela também serão excluídos.")) return;
                         const { error } = await supabase.from("zero_delay_boards").delete().eq("id", b.id);
                         if (error) return toast.error(error.message);
                         onChange();
                       }}><Trash2 className="h-4 w-4" /></Button>
-                    </td>
+                    </div>
                   </>
                 )}
-              </tr>
-            ))}
-            {boards.length === 0 && <tr><td colSpan={3} className="p-6 text-center text-muted-foreground">Nenhuma placa cadastrada</td></tr>}
-          </tbody>
-        </table>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                {boardButtons.map((btn) => {
+                  const occupied = !!btn.camera_id;
+                  return (
+                    <div key={btn.id} className={`rounded-md border p-2 text-xs ${occupied ? "border-orange-500/40 bg-orange-500/10" : "border-primary/40 bg-primary/10"}`}>
+                      <p className="font-semibold">{btn.label}</p>
+                      <p className="mt-1">
+                        {occupied
+                          ? <span className="text-orange-600 dark:text-orange-400">Em uso → {cameraName(btn.camera_id)}</span>
+                          : <span className="text-primary">Livre</span>}
+                      </p>
+                    </div>
+                  );
+                })}
+                {boardButtons.length === 0 && (
+                  <p className="col-span-full text-xs text-muted-foreground">Nenhum botão gerado.</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {boards.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma placa cadastrada.</p>}
       </div>
     </Card>
   );
