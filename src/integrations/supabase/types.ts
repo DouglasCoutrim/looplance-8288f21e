@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      arena_buttons: {
+        Row: {
+          arena_id: string
+          created_at: string
+          id: string
+          label: string
+        }
+        Insert: {
+          arena_id: string
+          created_at?: string
+          id?: string
+          label: string
+        }
+        Update: {
+          arena_id?: string
+          created_at?: string
+          id?: string
+          label?: string
+        }
+        Relationships: []
+      }
       arenas: {
         Row: {
           active: boolean
@@ -24,6 +45,8 @@ export type Database = {
           owner_id: string | null
           primary_color: string
           slug: string
+          supabase_service_key: string | null
+          supabase_url: string | null
         }
         Insert: {
           active?: boolean
@@ -34,6 +57,8 @@ export type Database = {
           owner_id?: string | null
           primary_color?: string
           slug: string
+          supabase_service_key?: string | null
+          supabase_url?: string | null
         }
         Update: {
           active?: boolean
@@ -44,8 +69,45 @@ export type Database = {
           owner_id?: string | null
           primary_color?: string
           slug?: string
+          supabase_service_key?: string | null
+          supabase_url?: string | null
         }
         Relationships: []
+      }
+      cameras: {
+        Row: {
+          arena_id: string
+          button_id: string | null
+          created_at: string
+          id: string
+          name: string
+          rtsp_url: string
+        }
+        Insert: {
+          arena_id: string
+          button_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          rtsp_url: string
+        }
+        Update: {
+          arena_id?: string
+          button_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          rtsp_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cameras_button_id_fkey"
+            columns: ["button_id"]
+            isOneToOne: false
+            referencedRelation: "arena_buttons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       courts: {
         Row: {
@@ -182,6 +244,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      zero_delay_boards: {
+        Row: {
+          arena_id: string
+          created_at: string
+          id: string
+          name: string
+          serial: string
+        }
+        Insert: {
+          arena_id: string
+          created_at?: string
+          id?: string
+          name: string
+          serial: string
+        }
+        Update: {
+          arena_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          serial?: string
+        }
+        Relationships: []
       }
     }
     Views: {
