@@ -17,23 +17,57 @@ export type Database = {
       arena_buttons: {
         Row: {
           arena_id: string
+          board_id: string | null
+          button_number: number | null
+          camera_id: string | null
           created_at: string
+          hardware_pin: string | null
           id: string
           label: string
         }
         Insert: {
           arena_id: string
+          board_id?: string | null
+          button_number?: number | null
+          camera_id?: string | null
           created_at?: string
+          hardware_pin?: string | null
           id?: string
           label: string
         }
         Update: {
           arena_id?: string
+          board_id?: string | null
+          button_number?: number | null
+          camera_id?: string | null
           created_at?: string
+          hardware_pin?: string | null
           id?: string
           label?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "arena_buttons_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "arenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arena_buttons_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "zero_delay_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arena_buttons_camera_id_fkey"
+            columns: ["camera_id"]
+            isOneToOne: false
+            referencedRelation: "cameras"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       arenas: {
         Row: {
@@ -100,6 +134,13 @@ export type Database = {
           rtsp_url?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "cameras_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "arenas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cameras_button_id_fkey"
             columns: ["button_id"]
@@ -250,6 +291,7 @@ export type Database = {
           arena_id: string
           created_at: string
           id: string
+          model: string
           name: string
           serial: string
         }
@@ -257,6 +299,7 @@ export type Database = {
           arena_id: string
           created_at?: string
           id?: string
+          model?: string
           name: string
           serial: string
         }
@@ -264,10 +307,19 @@ export type Database = {
           arena_id?: string
           created_at?: string
           id?: string
+          model?: string
           name?: string
           serial?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "zero_delay_boards_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "arenas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
