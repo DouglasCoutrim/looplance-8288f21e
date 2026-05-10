@@ -1,4 +1,4 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -113,6 +113,9 @@ function AdminPage() {
                       </span>
                     </td>
                     <td className="p-3 text-right">
+                      <Button asChild size="sm" variant="ghost">
+                        <Link to="/admin/arena/$id" params={{ id: a.id }}>Configurar</Link>
+                      </Button>
                       <Button size="sm" variant="ghost" onClick={() => toggleActive(a)}>
                         {a.active ? "Desativar" : "Ativar"}
                       </Button>
