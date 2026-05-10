@@ -45,7 +45,7 @@ function AdminPage() {
 
   if (loading) return <FullLoader />;
   if (!user) return <Navigate to="/login" />;
-  if (!isSuperAdmin) return <Navigate to="/app" />;
+  if (!isSuperAdmin) return <Navigate to="/acesso-negado" />;
 
   async function createArena(e: React.FormEvent) {
     e.preventDefault();
