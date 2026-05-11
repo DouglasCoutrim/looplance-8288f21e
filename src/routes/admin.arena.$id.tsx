@@ -117,6 +117,7 @@ function ArenaDetailPage() {
 
         <TabsContent value="infra" className="space-y-6">
           <ConnectionCard arena={arena} onSaved={load} />
+          <LocalServerCard arena={arena} buttons={buttons} cameras={cameras} />
           <BoardsCard arenaId={id} boards={boards} buttons={buttons} cameras={cameras} onChange={load} />
           <ButtonsCard arenaId={id} buttons={buttons.filter((b) => !b.board_id)} usedIds={usedBtnIds} onChange={load} />
         </TabsContent>
@@ -134,6 +135,52 @@ function ArenaDetailPage() {
         </TabsContent>
       </Tabs>
     </AppShell>
+  );
+}
+
+function LocalServerCard({ arena, buttons, cameras }: { arena: Arena; buttons: BtnRow[]; cameras: CamRow[] }) {
+  const env = `# .env — Servidor local LoopLance\nARENA_ID=${arena.id}\nLOCAL_SUPABASE_URL=${arena.supabase_url ?? "<defina em Configuração de conexão>"}\nLOCAL_SUPABASE_KEY=${arena.supabase_service_key ?? "<defina em Configuração de conexão>"}\n`;
+
+  const map = buttons
+    .filter((b) => b.hardware_pin)
+    .sort((a, b) => (a.button_number ?? 0) - (b.button_number ?? 0))
+    .map((b) => {
+      const cam = cameras.find((c) => c.id === b.camera_id) ?? cameras.find((c) => c.button_id === b.id);
+      return { pino: b.hardware_pin, camera_id: cam?.id ?? null, rtsp: cam?.rtsp_url ?? null };
+    });
+  const json = JSON.stringify(map, null, 2);
+
+  async function copy(text: string, label: string) {
+    try { await navigator.clipboard.writeText(text); toast.success(`${label} copiado`); }
+    catch { toast.error("Falha ao copiar"); }
+  }
+
+  return (
+    <Card className="p-6">
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold">Configurações do servidor local</h2>
+        <p className="text-sm text-muted-foreground">
+          Use estes dados no script Python que roda na arena. O mapa abaixo também está disponível via SQL na view <code className="text-xs">arena_button_camera_map</code>.
+        </p>
+      </div>
+
+      <div className="mb-6">
+        <div className="mb-2 flex items-center justify-between">
+          <Label>Arquivo .env</Label>
+          <Button size="sm" variant="outline" onClick={() => copy(env, ".env")}>Copiar .env</Button>
+        </div>
+        <pre className="overflow-x-auto rounded-lg bg-muted p-4 text-xs leading-relaxed text-foreground">{env}</pre>
+      </div>
+
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <Label>Mapa pino → câmera (JSON)</Label>
+          <Button size="sm" variant="outline" onClick={() => copy(json, "JSON")}>Copiar JSON</Button>
+        </div>
+        <pre className="max-h-80 overflow-auto rounded-lg bg-muted p-4 text-xs leading-relaxed text-foreground">{json}</pre>
+        {map.length === 0 && <p className="mt-2 text-xs text-muted-foreground">Cadastre uma placa ARC-968 para gerar os 12 pinos.</p>}
+      </div>
+    </Card>
   );
 }
 
