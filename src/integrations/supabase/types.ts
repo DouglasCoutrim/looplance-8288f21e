@@ -323,7 +323,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      arena_button_camera_map: {
+        Row: {
+          arena_id: string | null
+          button_label: string | null
+          button_number: number | null
+          camera_id: string | null
+          camera_name: string | null
+          pino: string | null
+          rtsp: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_buttons_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "arenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arena_buttons_camera_id_fkey"
+            columns: ["camera_id"]
+            isOneToOne: false
+            referencedRelation: "cameras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_arena_access: {
