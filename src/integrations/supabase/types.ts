@@ -54,6 +54,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "arena_buttons_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "public_arenas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "arena_buttons_board_id_fkey"
             columns: ["board_id"]
             isOneToOne: false
@@ -69,6 +76,51 @@ export type Database = {
           },
         ]
       }
+      arena_sponsors: {
+        Row: {
+          arena_id: string
+          created_at: string
+          display_order: number
+          id: string
+          link_url: string | null
+          logo_url: string
+          name: string
+        }
+        Insert: {
+          arena_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          link_url?: string | null
+          logo_url: string
+          name: string
+        }
+        Update: {
+          arena_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          link_url?: string | null
+          logo_url?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_sponsors_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "arenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arena_sponsors_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "public_arenas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       arenas: {
         Row: {
           active: boolean
@@ -79,6 +131,7 @@ export type Database = {
           owner_id: string | null
           primary_color: string
           slug: string
+          supabase_anon_key: string | null
           supabase_service_key: string | null
           supabase_url: string | null
         }
@@ -91,6 +144,7 @@ export type Database = {
           owner_id?: string | null
           primary_color?: string
           slug: string
+          supabase_anon_key?: string | null
           supabase_service_key?: string | null
           supabase_url?: string | null
         }
@@ -103,6 +157,7 @@ export type Database = {
           owner_id?: string | null
           primary_color?: string
           slug?: string
+          supabase_anon_key?: string | null
           supabase_service_key?: string | null
           supabase_url?: string | null
         }
@@ -142,6 +197,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "cameras_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "public_arenas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "cameras_button_id_fkey"
             columns: ["button_id"]
             isOneToOne: false
@@ -178,6 +240,13 @@ export type Database = {
             columns: ["arena_id"]
             isOneToOne: false
             referencedRelation: "arenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courts_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "public_arenas"
             referencedColumns: ["id"]
           },
         ]
@@ -233,6 +302,13 @@ export type Database = {
             referencedRelation: "arenas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_roles_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "public_arenas"
+            referencedColumns: ["id"]
+          },
         ]
       }
       videos: {
@@ -278,6 +354,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "videos_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "public_arenas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "videos_court_id_fkey"
             columns: ["court_id"]
             isOneToOne: false
@@ -319,6 +402,13 @@ export type Database = {
             referencedRelation: "arenas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "zero_delay_boards_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "public_arenas"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -342,6 +432,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "arena_buttons_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "public_arenas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "arena_buttons_camera_id_fkey"
             columns: ["camera_id"]
             isOneToOne: false
@@ -349,6 +446,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      public_arenas: {
+        Row: {
+          active: boolean | null
+          id: string | null
+          logo_url: string | null
+          name: string | null
+          primary_color: string | null
+          slug: string | null
+          supabase_anon_key: string | null
+          supabase_url: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          primary_color?: string | null
+          slug?: string | null
+          supabase_anon_key?: string | null
+          supabase_url?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          primary_color?: string | null
+          slug?: string | null
+          supabase_anon_key?: string | null
+          supabase_url?: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {
