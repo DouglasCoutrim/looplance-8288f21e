@@ -195,12 +195,21 @@ function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
   const [edit, setEdit] = useState(false);
   const [url, setUrl] = useState(arena.supabase_url ?? "");
   const [key, setKey] = useState(arena.supabase_service_key ?? "");
+  const [anon, setAnon] = useState(arena.supabase_anon_key ?? "");
   const [busy, setBusy] = useState(false);
-  useEffect(() => { setUrl(arena.supabase_url ?? ""); setKey(arena.supabase_service_key ?? ""); }, [arena.id]);
+  useEffect(() => {
+    setUrl(arena.supabase_url ?? "");
+    setKey(arena.supabase_service_key ?? "");
+    setAnon(arena.supabase_anon_key ?? "");
+  }, [arena.id]);
 
   async function save() {
     setBusy(true);
-    const { error } = await supabase.from("arenas").update({ supabase_url: url || null, supabase_service_key: key || null }).eq("id", arena.id);
+    const { error } = await supabase.from("arenas").update({
+      supabase_url: url || null,
+      supabase_service_key: key || null,
+      supabase_anon_key: anon || null,
+    }).eq("id", arena.id);
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Conexão atualizada");
@@ -212,7 +221,7 @@ function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">Configuração de conexão</h2>
-          <p className="text-sm text-muted-foreground">Credenciais Supabase específicas desta unidade.</p>
+          <p className="text-sm text-muted-foreground">Credenciais Supabase do banco local desta arena.</p>
         </div>
         {!edit && <Button size="sm" variant="outline" onClick={() => setEdit(true)}><Pencil className="mr-2 h-4 w-4" />Editar</Button>}
       </div>
@@ -222,16 +231,81 @@ function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
           <Input value={url} onChange={(e) => setUrl(e.target.value)} disabled={!edit} placeholder="https://xxx.supabase.co" />
         </div>
         <div>
-          <Label>SUPABASE_SERVICE_KEY</Label>
+          <Label>SUPABASE_ANON_KEY (pública — usada pelo portal do jogador)</Label>
+          <Input value={anon} onChange={(e) => setAnon(e.target.value)} disabled={!edit} placeholder="eyJhbGciOi..." />
+        </div>
+        <div>
+          <Label>SUPABASE_SERVICE_KEY (privada — usada pelo script Python)</Label>
           <Input type="password" value={key} onChange={(e) => setKey(e.target.value)} disabled={!edit} placeholder="eyJhbGciOi..." />
         </div>
         {edit && (
           <div className="flex gap-2">
             <Button onClick={save} disabled={busy}>{busy ? "Salvando..." : "Salvar"}</Button>
-            <Button variant="ghost" onClick={() => { setEdit(false); setUrl(arena.supabase_url ?? ""); setKey(arena.supabase_service_key ?? ""); }}>Cancelar</Button>
+            <Button variant="ghost" onClick={() => { setEdit(false); setUrl(arena.supabase_url ?? ""); setKey(arena.supabase_service_key ?? ""); setAnon(arena.supabase_anon_key ?? ""); }}>Cancelar</Button>
           </div>
         )}
       </div>
+    </Card>
+  );
+}
+
+function SponsorsCard({ arenaId }: { arenaId: string }) {
+  const [list, setList] = useState<Sponsor[]>([]);
+  const [name, setName] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function load() {
+    const { data } = await supabase.from("arena_sponsors").select("*").eq("arena_id", arenaId).order("display_order");
+    setList((data ?? []) as Sponsor[]);
+  }
+  useEffect(() => { load(); }, [arenaId]);
+
+  async function add(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !logoUrl.trim()) return toast.error("Nome e logo são obrigatórios");
+    setBusy(true);
+    const { error } = await supabase.from("arena_sponsors").insert({
+      arena_id: arenaId, name: name.trim(), logo_url: logoUrl.trim(), link_url: linkUrl.trim() || null,
+      display_order: list.length,
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    setName(""); setLogoUrl(""); setLinkUrl(""); load();
+  }
+
+  async function remove(id: string) {
+    const { error } = await supabase.from("arena_sponsors").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    load();
+  }
+
+  return (
+    <Card className="p-6">
+      <h2 className="mb-4 text-lg font-semibold">Patrocinadores</h2>
+      <form onSubmit={add} className="mb-6 grid gap-3 md:grid-cols-4">
+        <Input placeholder="Nome" value={name} onChange={(e) => setName(e.target.value)} />
+        <Input placeholder="URL do logo" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} />
+        <Input placeholder="Link (opcional)" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
+        <Button type="submit" disabled={busy}>{busy ? "Adicionando..." : "Adicionar"}</Button>
+      </form>
+      {list.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhum patrocinador cadastrado ainda.</p>
+      ) : (
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {list.map((s) => (
+            <li key={s.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
+              <img src={s.logo_url} alt={s.name} className="h-12 w-12 rounded object-contain bg-muted" />
+              <div className="flex-1 min-w-0">
+                <p className="truncate font-medium">{s.name}</p>
+                {s.link_url && <p className="truncate text-xs text-muted-foreground">{s.link_url}</p>}
+              </div>
+              <Button size="icon" variant="ghost" onClick={() => remove(s.id)}><Trash2 className="h-4 w-4" /></Button>
+            </li>
+          ))}
+        </ul>
+      )}
     </Card>
   );
 }
