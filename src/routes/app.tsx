@@ -28,7 +28,7 @@ function AppRedirect() {
   if (isSuperAdmin) return <Navigate to="/admin" />;
   if (!resolved) return <FullLoader />;
   if (adminArenaId && arenaSlug) return <Navigate to="/arena" />;
-  if (playerArenaIds.length > 0 && arenaSlug) return <Navigate to="/a/$slug" params={{ slug: arenaSlug }} />;
+  if (playerArenaIds.length > 0 && arenaSlug) return <Navigate to="/a/$slug" params={{ slug: arenaSlug }} search={{}} />;
   return <NoAccess />;
 }
 

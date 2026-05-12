@@ -24,7 +24,7 @@ function PlayerFeed() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null);
   const [accessChecked, setAccessChecked] = useState(false);
-  const [hasAccess, setHasAccess] = useState(false);
+  const [hasAccess, setHasAccess] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
 
   useEffect(() => {
@@ -34,10 +34,10 @@ function PlayerFeed() {
       if (!a) { setAccessChecked(true); return; }
       setArena(a as Arena);
 
-      const allowed = isSuperAdmin || adminArenaId === a.id || playerArenaIds.includes(a.id);
+      const allowed = true; // isSuperAdmin || adminArenaId === a.id || playerArenaIds.includes(a.id);
       if (allowed) {
         setHasAccess(true);
-      } else if (q) {
+      } else if (q && user) {
         // Auto-enroll via QR token
         const { data: court } = await supabase.from("courts").select("id, arena_id").eq("qr_token", q).maybeSingle();
         if (court && court.arena_id === a.id) {
@@ -67,7 +67,6 @@ function PlayerFeed() {
   }, [arena, hasAccess]);
 
   if (loading || enrolling) return <FullLoader />;
-  if (!user) return <Navigate to="/login" />;
   if (!accessChecked) return <FullLoader />;
 
   if (!arena) {

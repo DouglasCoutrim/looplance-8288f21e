@@ -19,6 +19,7 @@ import { ptBR } from "date-fns/locale";
 import { CalendarIcon, Download, Loader2, MapPin, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { LiveStream } from "@/components/LiveStream";
 
 export const Route = createFileRoute("/play/$slug")({
   component: PlayArenaPage,
@@ -208,6 +209,14 @@ function PlayArenaPage() {
             Não foi possível conectar ao banco da arena: {localError}
           </Card>
         )}
+
+        {/* Live Stream */}
+        <section className="pt-4">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Câmera Ao Vivo</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <LiveStream url="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" brandColor={brand} quadraName="Quadra Principal" />
+          </div>
+        </section>
 
         {/* Featured carousel */}
         {featured.length > 0 && (
