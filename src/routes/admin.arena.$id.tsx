@@ -114,6 +114,7 @@ function ArenaDetailPage() {
           <TabsTrigger value="infra">Infra</TabsTrigger>
           <TabsTrigger value="cameras">Câmeras</TabsTrigger>
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
+          <TabsTrigger value="patrocinadores">Patrocinadores</TabsTrigger>
           <TabsTrigger value="whitelabel">White Label</TabsTrigger>
         </TabsList>
 
@@ -130,6 +131,10 @@ function ArenaDetailPage() {
 
         <TabsContent value="usuarios">
           <UsersCard arenaId={id} users={users} onChange={load} />
+        </TabsContent>
+
+        <TabsContent value="patrocinadores">
+          <SponsorsCard arenaId={id} />
         </TabsContent>
 
         <TabsContent value="whitelabel">
