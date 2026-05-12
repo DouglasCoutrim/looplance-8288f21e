@@ -20,9 +20,11 @@ interface Arena {
   slug: string;
   supabase_url: string | null;
   supabase_service_key: string | null;
+  supabase_anon_key: string | null;
   logo_url: string | null;
   primary_color: string;
 }
+interface Sponsor { id: string; name: string; logo_url: string; link_url: string | null; display_order: number }
 interface BtnRow {
   id: string; label: string;
   board_id: string | null; button_number: number | null;
