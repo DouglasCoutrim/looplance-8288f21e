@@ -251,6 +251,60 @@ export type Database = {
           },
         ]
       }
+      global_replays: {
+        Row: {
+          arena_id: string
+          arena_logo_url: string | null
+          arena_name: string
+          arena_primary_color: string
+          arena_slug: string
+          court_id: string | null
+          court_name: string | null
+          created_at: string
+          data_evento: string
+          hora_evento: string
+          id: string
+          thumbnail_url: string | null
+          title: string | null
+          video_id: string | null
+          video_url: string
+        }
+        Insert: {
+          arena_id: string
+          arena_logo_url?: string | null
+          arena_name: string
+          arena_primary_color?: string
+          arena_slug: string
+          court_id?: string | null
+          court_name?: string | null
+          created_at?: string
+          data_evento?: string
+          hora_evento?: string
+          id?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          video_id?: string | null
+          video_url: string
+        }
+        Update: {
+          arena_id?: string
+          arena_logo_url?: string | null
+          arena_name?: string
+          arena_primary_color?: string
+          arena_slug?: string
+          court_id?: string | null
+          court_name?: string | null
+          created_at?: string
+          data_evento?: string
+          hora_evento?: string
+          id?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          video_id?: string | null
+          video_url?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
