@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BottomNav } from "@/components/BottomNav";
-import logoMark from "@/assets/logo-mark.png";
+import logoFull from "@/assets/logo-full.png";
 import { ChevronRight, Loader2, MapPin, Radio, Search, User as UserIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
