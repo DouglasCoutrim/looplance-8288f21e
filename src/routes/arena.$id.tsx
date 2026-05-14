@@ -60,29 +60,31 @@ function ArenaDashboard() {
   }, [arena?.primary_color]);
 
   useEffect(() => {
-    if (!arena?.supabase_url || !arena?.supabase_anon_key) return;
+    if (!arena?.id) return;
     (async () => {
-      try {
-        const local = getArenaClient(arena.supabase_url!, arena.supabase_anon_key!);
-        const [{ data: q, error: qErr }, { data: r, error: rErr }] = await Promise.all([
-          local.from("quadras").select("id,nome").order("nome"),
-          local.from("replays")
-            .select("id,video_url,thumbnail_url,data_evento,hora_evento,quadra_id")
-            .order("data_evento", { ascending: false })
-            .order("hora_evento", { ascending: false })
-            .limit(500),
-        ]);
-        if (qErr) throw qErr;
-        if (rErr) throw rErr;
-        setQuadras((q ?? []) as Quadra[]);
-        const rs = (r ?? []) as Replay[];
-        setReplays(rs);
-        if (rs.length) setSelected(rs[0]);
-      } catch (e: unknown) {
-        setLocalError(e instanceof Error ? e.message : "Erro ao carregar vídeos");
-      }
+      const [{ data: q }, { data: r }] = await Promise.all([
+        supabase.from("courts").select("id,name").eq("arena_id", arena.id).order("name"),
+        supabase.from("videos")
+          .select("id,video_url,thumbnail_url,created_at,court_id")
+          .eq("arena_id", arena.id)
+          .order("created_at", { ascending: false })
+          .limit(500),
+      ]);
+
+      setQuadras(((q ?? []) as { id: string; name: string }[]).map((court) => ({ id: court.id, nome: court.name })));
+      const rs = ((r ?? []) as { id: string; video_url: string; thumbnail_url: string | null; created_at: string; court_id: string | null }[])
+        .map((video) => ({
+          id: video.id,
+          video_url: video.video_url,
+          thumbnail_url: video.thumbnail_url,
+          data_evento: video.created_at.slice(0, 10),
+          hora_evento: video.created_at.split("T")[1]?.slice(0, 8) ?? "00:00:00",
+          quadra_id: video.court_id,
+        }));
+      setReplays(rs);
+      setSelected(rs[0] ?? null);
     })();
-  }, [arena?.id, arena?.supabase_url, arena?.supabase_anon_key]);
+  }, [arena?.id]);
 
   useEffect(() => {
     if (!user || !arena) return;
@@ -161,19 +163,13 @@ function ArenaDashboard() {
           </div>
           <div className="flex items-center gap-1">
             <Button size="icon" variant="ghost" onClick={toggleFav} aria-label="Favoritar">
-              <Star className={`h-5 w-5 ${favorited ? "fill-yellow-400 text-yellow-400" : ""}`} />
+              <Star className={`h-5 w-5 ${favorited ? "fill-primary text-primary" : ""}`} />
             </Button>
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-3xl px-4">
-        {localError && (
-          <Card className="my-4 border-destructive/50 p-4 text-sm text-destructive">
-            Não foi possível conectar ao banco da arena: {localError}
-          </Card>
-        )}
-
         <section className="pt-4">
           <PlayerWithControls selected={selected} brand={brand} onEdit={() => selected && setEditing(selected)} />
           {selected && (
