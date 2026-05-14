@@ -13,6 +13,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { resolveReplayUrl } from "@/lib/replays";
 
 export const Route = createFileRoute("/arena/$id")({
   component: ArenaDashboard,
@@ -282,6 +283,16 @@ function PlayerWithControls({
 }: { selected: Replay | null; brand: string; onEdit: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !selected) return;
+    const url = resolveReplayUrl(selected.video_url);
+    if (v.src !== url) {
+      v.src = url;
+      v.load();
+    }
+  }, [selected]);
+
   function nudge(delta: number) {
     const v = videoRef.current;
     if (!v) return;
@@ -292,13 +303,11 @@ function PlayerWithControls({
     <div className="overflow-hidden rounded-2xl border border-border bg-black">
       {selected ? (
         <video
-          key={selected.id}
           ref={videoRef}
-          src={selected.video_url}
           controls
           playsInline
           className="aspect-video w-full bg-black"
-          poster={selected.thumbnail_url ?? undefined}
+          poster={selected.thumbnail_url ? resolveReplayUrl(selected.thumbnail_url) : undefined}
         />
       ) : (
         <div className="aspect-video w-full grid place-items-center text-white/60">
@@ -366,8 +375,8 @@ function ThumbCard({
       style={{ borderColor: active ? brand : undefined, boxShadow: active ? `0 0 0 1px ${brand}` : undefined }}>
       <button onClick={onSelect} className="relative block aspect-video w-full bg-black">
         {replay.thumbnail_url
-          ? <img src={replay.thumbnail_url} alt="" className="h-full w-full object-cover" />
-          : <video src={replay.video_url} className="h-full w-full object-cover" muted preload="metadata" />}
+          ? <img src={resolveReplayUrl(replay.thumbnail_url)} alt="" className="h-full w-full object-cover" />
+          : <video src={resolveReplayUrl(replay.video_url)} className="h-full w-full object-cover" muted preload="metadata" />}
         <span className="absolute left-1.5 top-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white"
           style={{ backgroundColor: brand }}>
           {replay.hora_evento.slice(0, 5)}
@@ -499,7 +508,7 @@ function ReplayEditor({
           <div ref={stageRef} className="relative aspect-video w-full select-none overflow-hidden rounded-lg bg-black">
             <video
               ref={videoRef}
-              src={replay.video_url}
+              src={resolveReplayUrl(replay.video_url)}
               onLoadedMetadata={onLoaded}
               className="h-full w-full object-contain"
               playsInline

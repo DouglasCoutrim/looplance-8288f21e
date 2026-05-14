@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { BottomNav } from "@/components/BottomNav";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { resolveReplayUrl } from "@/lib/replays";
 import logoFull from "@/assets/logo-full.png";
 import { ChevronRight, Flame, Loader2, MapPin, Radio, Search, User as UserIcon } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
@@ -48,6 +50,8 @@ function Home() {
   const [topLoading, setTopLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filterState, setFilterState] = useState<string>("all");
+  const [filterCity, setFilterCity] = useState<string>("all");
 
   useEffect(() => {
     (async () => {
@@ -79,14 +83,27 @@ function Home() {
   const norm = (s: string) =>
     s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
+  const stateOptions = useMemo(
+    () => Array.from(new Set(arenas.map((a) => (a.state ?? "").trim()).filter(Boolean))).sort(),
+    [arenas],
+  );
+  const cityOptions = useMemo(() => {
+    const pool = filterState === "all"
+      ? arenas
+      : arenas.filter((a) => (a.state ?? "").trim() === filterState);
+    return Array.from(new Set(pool.map((a) => (a.city ?? "").trim()).filter(Boolean))).sort();
+  }, [arenas, filterState]);
+
   const filteredArenas = useMemo(() => {
     const q = norm(search);
-    if (!q) return arenas;
     return arenas.filter((a) => {
+      if (filterState !== "all" && (a.state ?? "").trim() !== filterState) return false;
+      if (filterCity !== "all" && (a.city ?? "").trim() !== filterCity) return false;
+      if (!q) return true;
       const hay = norm([a.name, a.city, a.state].filter(Boolean).join(" "));
       return hay.includes(q);
     });
-  }, [arenas, search]);
+  }, [arenas, search, filterState, filterCity]);
 
   const enterArena = (id: string) => navigate({ to: "/arena/$id", params: { id } });
 
@@ -94,7 +111,7 @@ function Home() {
     <div className="min-h-screen bg-background pb-24 text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 py-2">
-          <img src={logoFull} alt="LoopLance" className="h-14 w-auto" />
+          <img src={logoFull} alt="LoopLance" className="h-20 w-auto" />
           <button
             onClick={() => navigate({ to: "/perfil" })}
             className="grid h-10 w-10 place-items-center rounded-full text-muted-foreground transition hover:bg-card hover:text-primary"
@@ -129,10 +146,10 @@ function Home() {
                       className="group relative block aspect-video w-full overflow-hidden rounded-2xl border border-border bg-black text-left"
                     >
                       {r.thumbnail_url ? (
-                        <img src={r.thumbnail_url} alt={r.arena_name}
+                        <img src={resolveReplayUrl(r.thumbnail_url)} alt={r.arena_name}
                           className="h-full w-full object-cover transition group-hover:scale-105" />
                       ) : (
-                        <video src={r.video_url} className="h-full w-full object-cover" muted preload="metadata" />
+                        <video src={resolveReplayUrl(r.video_url)} className="h-full w-full object-cover" muted preload="metadata" />
                       )}
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3">
                         <div className="flex items-end justify-between gap-2">
@@ -150,8 +167,24 @@ function Home() {
           )}
         </section>
 
-        {/* Buscar arena */}
-        <section className="mt-6">
+        {/* Filtros + busca */}
+        <section className="mt-6 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Select value={filterState} onValueChange={(v) => { setFilterState(v); setFilterCity("all"); }}>
+              <SelectTrigger className="h-11"><SelectValue placeholder="UF" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os estados</SelectItem>
+                {stateOptions.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterCity} onValueChange={setFilterCity} disabled={cityOptions.length === 0}>
+              <SelectTrigger className="h-11"><SelectValue placeholder="Cidade" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as cidades</SelectItem>
+                {cityOptions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)}
@@ -222,8 +255,8 @@ function Home() {
                   >
                     <div className="relative aspect-video w-full bg-black">
                       {r.thumbnail_url
-                        ? <img src={r.thumbnail_url} alt="" className="h-full w-full object-cover" />
-                        : <video src={r.video_url} className="h-full w-full object-cover" muted preload="metadata" />}
+                        ? <img src={resolveReplayUrl(r.thumbnail_url)} alt="" className="h-full w-full object-cover" />
+                        : <video src={resolveReplayUrl(r.video_url)} className="h-full w-full object-cover" muted preload="metadata" />}
                       <Badge className="absolute left-1.5 top-1.5 border-0 px-1.5 py-0 text-[9px] text-white shadow"
                         style={{ backgroundColor: r.arena_primary_color }}>
                         {r.arena_name}
