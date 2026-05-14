@@ -1,11 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getArenaClient } from "@/lib/arena-client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -27,7 +25,6 @@ interface PublicArena {
   id: string; slug: string; name: string;
   logo_url: string | null; primary_color: string;
   city: string | null; state: string | null;
-  supabase_url: string | null; supabase_anon_key: string | null;
 }
 interface Quadra { id: string; nome: string }
 interface Replay {
@@ -43,7 +40,6 @@ function ArenaDashboard() {
   const [loading, setLoading] = useState(true);
   const [quadras, setQuadras] = useState<Quadra[]>([]);
   const [replays, setReplays] = useState<Replay[]>([]);
-  const [localError, setLocalError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Replay | null>(null);
   const [editing, setEditing] = useState<Replay | null>(null);
   const [favorited, setFavorited] = useState(false);
