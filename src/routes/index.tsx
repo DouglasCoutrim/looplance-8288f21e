@@ -51,6 +51,11 @@ function Home() {
 
   useEffect(() => {
     (async () => {
+      const topRes = await supabase.from("global_replays" as never)
+        .select("*").order("created_at", { ascending: false }).limit(3);
+      if (topRes.data) setTopReplays(topRes.data as unknown as GlobalReplay[]);
+      setTopLoading(false);
+
       const [aRes, rRes] = await Promise.all([
         supabase.from("public_arenas" as never).select("*"),
         supabase.from("global_replays" as never)
