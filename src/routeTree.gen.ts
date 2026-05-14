@@ -13,7 +13,6 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as MeusReplaysRouteImport } from './routes/meus-replays'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ArenaRouteImport } from './routes/arena'
-import { Route as AppRouteImport } from './routes/app'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AcessoNegadoRouteImport } from './routes/acesso-negado'
 import { Route as IndexRouteImport } from './routes/index'
@@ -40,11 +39,6 @@ const LoginRoute = LoginRouteImport.update({
 const ArenaRoute = ArenaRouteImport.update({
   id: '/arena',
   path: '/arena',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppRoute = AppRouteImport.update({
-  id: '/app',
-  path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -87,7 +81,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/acesso-negado': typeof AcessoNegadoRoute
   '/admin': typeof AdminRouteWithChildren
-  '/app': typeof AppRoute
   '/arena': typeof ArenaRouteWithChildren
   '/login': typeof LoginRoute
   '/meus-replays': typeof MeusReplaysRoute
@@ -101,7 +94,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/acesso-negado': typeof AcessoNegadoRoute
   '/admin': typeof AdminRouteWithChildren
-  '/app': typeof AppRoute
   '/arena': typeof ArenaRouteWithChildren
   '/login': typeof LoginRoute
   '/meus-replays': typeof MeusReplaysRoute
@@ -116,7 +108,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/acesso-negado': typeof AcessoNegadoRoute
   '/admin': typeof AdminRouteWithChildren
-  '/app': typeof AppRoute
   '/arena': typeof ArenaRouteWithChildren
   '/login': typeof LoginRoute
   '/meus-replays': typeof MeusReplaysRoute
@@ -132,7 +123,6 @@ export interface FileRouteTypes {
     | '/'
     | '/acesso-negado'
     | '/admin'
-    | '/app'
     | '/arena'
     | '/login'
     | '/meus-replays'
@@ -146,7 +136,6 @@ export interface FileRouteTypes {
     | '/'
     | '/acesso-negado'
     | '/admin'
-    | '/app'
     | '/arena'
     | '/login'
     | '/meus-replays'
@@ -160,7 +149,6 @@ export interface FileRouteTypes {
     | '/'
     | '/acesso-negado'
     | '/admin'
-    | '/app'
     | '/arena'
     | '/login'
     | '/meus-replays'
@@ -175,7 +163,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AcessoNegadoRoute: typeof AcessoNegadoRoute
   AdminRoute: typeof AdminRouteWithChildren
-  AppRoute: typeof AppRoute
   ArenaRoute: typeof ArenaRouteWithChildren
   LoginRoute: typeof LoginRoute
   MeusReplaysRoute: typeof MeusReplaysRoute
@@ -212,13 +199,6 @@ declare module '@tanstack/react-router' {
       path: '/arena'
       fullPath: '/arena'
       preLoaderRoute: typeof ArenaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app': {
-      id: '/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -297,7 +277,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AcessoNegadoRoute: AcessoNegadoRoute,
   AdminRoute: AdminRouteWithChildren,
-  AppRoute: AppRoute,
   ArenaRoute: ArenaRouteWithChildren,
   LoginRoute: LoginRoute,
   MeusReplaysRoute: MeusReplaysRoute,
@@ -308,3 +287,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
