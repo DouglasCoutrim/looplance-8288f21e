@@ -52,7 +52,7 @@ function ArenaDetailPage() {
     setLoadError(null);
     const { data: a, error: arenaError } = await supabase
       .from("arenas")
-      .select("id,name,slug,supabase_url,supabase_service_key,supabase_anon_key,logo_url,primary_color")
+      .select("id,name,slug,supabase_url,supabase_service_key,supabase_anon_key,logo_url,primary_color,city,state")
       .eq("id", id).maybeSingle();
     if (arenaError) {
       setLoadError(arenaError.message);
