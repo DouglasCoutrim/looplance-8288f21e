@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { BottomNav } from "@/components/BottomNav";
-import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { resolveReplayUrl } from "@/lib/replays";
@@ -52,6 +52,20 @@ function Home() {
   const [search, setSearch] = useState("");
   const [filterState, setFilterState] = useState<string>("all");
   const [filterCity, setFilterCity] = useState<string>("all");
+  const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+
+  useEffect(() => {
+    if (!carouselApi) return;
+    const sync = () => setCarouselIndex(carouselApi.selectedScrollSnap());
+    sync();
+    carouselApi.on("select", sync);
+    carouselApi.on("reInit", sync);
+    return () => {
+      carouselApi.off("select", sync);
+      carouselApi.off("reInit", sync);
+    };
+  }, [carouselApi]);
 
   useEffect(() => {
     (async () => {
