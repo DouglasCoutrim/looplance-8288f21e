@@ -23,6 +23,8 @@ interface Arena {
   supabase_anon_key: string | null;
   logo_url: string | null;
   primary_color: string;
+  city: string | null;
+  state: string | null;
 }
 interface Sponsor { id: string; name: string; logo_url: string; link_url: string | null; display_order: number }
 interface BtnRow {
