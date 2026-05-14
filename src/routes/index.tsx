@@ -255,8 +255,8 @@ function Home() {
                   >
                     <div className="relative aspect-video w-full bg-black">
                       {r.thumbnail_url
-                        ? <img src={r.thumbnail_url} alt="" className="h-full w-full object-cover" />
-                        : <video src={r.video_url} className="h-full w-full object-cover" muted preload="metadata" />}
+                        ? <img src={resolveReplayUrl(r.thumbnail_url)} alt="" className="h-full w-full object-cover" />
+                        : <video src={resolveReplayUrl(r.video_url)} className="h-full w-full object-cover" muted preload="metadata" />}
                       <Badge className="absolute left-1.5 top-1.5 border-0 px-1.5 py-0 text-[9px] text-white shadow"
                         style={{ backgroundColor: r.arena_primary_color }}>
                         {r.arena_name}
