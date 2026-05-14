@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BottomNav } from "@/components/BottomNav";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import { Skeleton } from "@/components/ui/skeleton";
 import logoFull from "@/assets/logo-full.png";
-import { ChevronRight, Loader2, MapPin, Radio, Search, User as UserIcon } from "lucide-react";
-import { format } from "date-fns";
+import { ChevronRight, Flame, Loader2, MapPin, Radio, Search, User as UserIcon } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export const Route = createFileRoute("/")({
@@ -43,13 +44,18 @@ function Home() {
   const { user } = useAuth();
   const [arenas, setArenas] = useState<Arena[]>([]);
   const [replays, setReplays] = useState<GlobalReplay[]>([]);
+  const [topReplays, setTopReplays] = useState<GlobalReplay[]>([]);
+  const [topLoading, setTopLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterState, setFilterState] = useState("all");
-  const [filterCity, setFilterCity] = useState("all");
 
   useEffect(() => {
     (async () => {
+      const topRes = await supabase.from("global_replays" as never)
+        .select("*").order("created_at", { ascending: false }).limit(3);
+      if (topRes.data) setTopReplays(topRes.data as unknown as GlobalReplay[]);
+      setTopLoading(false);
+
       const [aRes, rRes] = await Promise.all([
         supabase.from("public_arenas" as never).select("*"),
         supabase.from("global_replays" as never)
@@ -70,32 +76,17 @@ function Home() {
     return set;
   }, [replays]);
 
-  const states = useMemo(() => {
-    const s = new Set<string>();
-    arenas.forEach((a) => { if (a.state) s.add(a.state); });
-    return Array.from(s).sort();
-  }, [arenas]);
-
-  const cities = useMemo(() => {
-    const c = new Set<string>();
-    arenas.filter((a) => filterState === "all" || a.state === filterState)
-      .forEach((a) => { if (a.city) c.add(a.city); });
-    return Array.from(c).sort();
-  }, [arenas, filterState]);
-
   const norm = (s: string) =>
     s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
   const filteredArenas = useMemo(() => {
     const q = norm(search);
+    if (!q) return arenas;
     return arenas.filter((a) => {
-      if (filterState !== "all" && a.state !== filterState) return false;
-      if (filterCity !== "all" && a.city !== filterCity) return false;
-      if (!q) return true;
       const hay = norm([a.name, a.city, a.state].filter(Boolean).join(" "));
       return hay.includes(q);
     });
-  }, [arenas, search, filterState, filterCity]);
+  }, [arenas, search]);
 
   const enterArena = (id: string) => navigate({ to: "/arena/$id", params: { id } });
 
@@ -115,38 +106,61 @@ function Home() {
       </header>
 
       <main className="mx-auto max-w-md px-4 py-4">
-        {/* Seletor */}
+        {/* Hero - Top Replays Carousel */}
         <section>
-          <h1 className="text-2xl font-extrabold leading-tight">
-            Encontre sua <span className="text-primary">arena</span>
-          </h1>
-          <p className="mt-1 text-xs text-muted-foreground">Veja lances ao vivo e gere seus melhores replays.</p>
-
-          <div className="mt-4 space-y-2">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar arena ou cidade…" className="h-11 pl-9" />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <Select value={filterState} onValueChange={(v) => { setFilterState(v); setFilterCity("all"); }}>
-                <SelectTrigger className="h-10"><SelectValue placeholder="Estado" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos estados</SelectItem>
-                  {states.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Select value={filterCity} onValueChange={setFilterCity}>
-                <SelectTrigger className="h-10"><SelectValue placeholder="Cidade" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas cidades</SelectItem>
-                  {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="mb-3 flex items-center gap-2">
+            <Flame className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-extrabold leading-tight">Últimos Replays</h1>
           </div>
 
-          <div className="mt-5 space-y-2">
+          {topLoading ? (
+            <Skeleton className="aspect-video w-full rounded-2xl" />
+          ) : topReplays.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
+              Nenhum replay disponível ainda.
+            </div>
+          ) : (
+            <Carousel opts={{ align: "start", loop: true }} className="w-full">
+              <CarouselContent>
+                {topReplays.map((r) => (
+                  <CarouselItem key={r.id} className="basis-full">
+                    <button
+                      onClick={() => navigate({ to: "/arena/$id", params: { id: r.arena_id } })}
+                      className="group relative block aspect-video w-full overflow-hidden rounded-2xl border border-border bg-black text-left"
+                    >
+                      {r.thumbnail_url ? (
+                        <img src={r.thumbnail_url} alt={r.arena_name}
+                          className="h-full w-full object-cover transition group-hover:scale-105" />
+                      ) : (
+                        <video src={r.video_url} className="h-full w-full object-cover" muted preload="metadata" />
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3">
+                        <div className="flex items-end justify-between gap-2">
+                          <p className="truncate text-sm font-bold text-white">{r.arena_name}</p>
+                          <p className="shrink-0 text-[10px] text-white/70">
+                            {formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: ptBR })}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+          )}
+        </section>
+
+        {/* Buscar arena */}
+        <section className="mt-6">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar arena ou cidade…" className="h-11 pl-9" />
+          </div>
+        </section>
+
+        <section className="mt-4">
+          <div className="space-y-2">
             {loading ? (
               <div className="grid place-items-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
             ) : filteredArenas.length === 0 ? (
