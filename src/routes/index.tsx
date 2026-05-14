@@ -146,10 +146,10 @@ function Home() {
                       className="group relative block aspect-video w-full overflow-hidden rounded-2xl border border-border bg-black text-left"
                     >
                       {r.thumbnail_url ? (
-                        <img src={r.thumbnail_url} alt={r.arena_name}
+                        <img src={resolveReplayUrl(r.thumbnail_url)} alt={r.arena_name}
                           className="h-full w-full object-cover transition group-hover:scale-105" />
                       ) : (
-                        <video src={r.video_url} className="h-full w-full object-cover" muted preload="metadata" />
+                        <video src={resolveReplayUrl(r.video_url)} className="h-full w-full object-cover" muted preload="metadata" />
                       )}
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3">
                         <div className="flex items-end justify-between gap-2">
@@ -167,8 +167,24 @@ function Home() {
           )}
         </section>
 
-        {/* Buscar arena */}
-        <section className="mt-6">
+        {/* Filtros + busca */}
+        <section className="mt-6 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Select value={filterState} onValueChange={(v) => { setFilterState(v); setFilterCity("all"); }}>
+              <SelectTrigger className="h-11"><SelectValue placeholder="UF" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os estados</SelectItem>
+                {stateOptions.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterCity} onValueChange={setFilterCity} disabled={cityOptions.length === 0}>
+              <SelectTrigger className="h-11"><SelectValue placeholder="Cidade" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as cidades</SelectItem>
+                {cityOptions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)}
