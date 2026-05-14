@@ -50,6 +50,8 @@ function Home() {
   const [topLoading, setTopLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filterState, setFilterState] = useState<string>("all");
+  const [filterCity, setFilterCity] = useState<string>("all");
 
   useEffect(() => {
     (async () => {
@@ -81,14 +83,27 @@ function Home() {
   const norm = (s: string) =>
     s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
+  const stateOptions = useMemo(
+    () => Array.from(new Set(arenas.map((a) => (a.state ?? "").trim()).filter(Boolean))).sort(),
+    [arenas],
+  );
+  const cityOptions = useMemo(() => {
+    const pool = filterState === "all"
+      ? arenas
+      : arenas.filter((a) => (a.state ?? "").trim() === filterState);
+    return Array.from(new Set(pool.map((a) => (a.city ?? "").trim()).filter(Boolean))).sort();
+  }, [arenas, filterState]);
+
   const filteredArenas = useMemo(() => {
     const q = norm(search);
-    if (!q) return arenas;
     return arenas.filter((a) => {
+      if (filterState !== "all" && (a.state ?? "").trim() !== filterState) return false;
+      if (filterCity !== "all" && (a.city ?? "").trim() !== filterCity) return false;
+      if (!q) return true;
       const hay = norm([a.name, a.city, a.state].filter(Boolean).join(" "));
       return hay.includes(q);
     });
-  }, [arenas, search]);
+  }, [arenas, search, filterState, filterCity]);
 
   const enterArena = (id: string) => navigate({ to: "/arena/$id", params: { id } });
 
@@ -96,7 +111,7 @@ function Home() {
     <div className="min-h-screen bg-background pb-24 text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 py-2">
-          <img src={logoFull} alt="LoopLance" className="h-14 w-auto" />
+          <img src={logoFull} alt="LoopLance" className="h-20 w-auto" />
           <button
             onClick={() => navigate({ to: "/perfil" })}
             className="grid h-10 w-10 place-items-center rounded-full text-muted-foreground transition hover:bg-card hover:text-primary"
