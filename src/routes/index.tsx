@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BottomNav } from "@/components/BottomNav";
-import logoMark from "@/assets/logo-mark.png";
+import logoFull from "@/assets/logo-full.png";
 import { ChevronRight, Loader2, MapPin, Radio, Search, User as UserIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -83,13 +83,17 @@ function Home() {
     return Array.from(c).sort();
   }, [arenas, filterState]);
 
+  const norm = (s: string) =>
+    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
   const filteredArenas = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = norm(search);
     return arenas.filter((a) => {
       if (filterState !== "all" && a.state !== filterState) return false;
       if (filterCity !== "all" && a.city !== filterCity) return false;
-      if (q && !a.name.toLowerCase().includes(q) && !(a.city ?? "").toLowerCase().includes(q)) return false;
-      return true;
+      if (!q) return true;
+      const hay = norm([a.name, a.city, a.state].filter(Boolean).join(" "));
+      return hay.includes(q);
     });
   }, [arenas, search, filterState, filterCity]);
 
@@ -99,15 +103,10 @@ function Home() {
     <div className="min-h-screen bg-background pb-24 text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center justify-between gap-2 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <img src={logoMark} alt="LoopLance" className="h-7 w-7" />
-            <span className="text-base font-extrabold tracking-tight">
-              Loop<span className="text-primary">Lance</span>
-            </span>
-          </div>
+          <img src={logoFull} alt="LoopLance" className="h-10 w-auto" />
           <button
             onClick={() => navigate({ to: "/perfil" })}
-            className="grid h-9 w-9 place-items-center rounded-full border border-border bg-card text-muted-foreground hover:text-primary"
+            className="grid h-10 w-10 place-items-center rounded-full border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/60"
             aria-label="Perfil"
           >
             <UserIcon className="h-4 w-4" />

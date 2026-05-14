@@ -148,9 +148,9 @@ function ArenaDashboard() {
               <ArrowLeft className="h-5 w-5" />
             </button>
             {arena.logo_url ? (
-              <img src={arena.logo_url} alt="" className="h-9 w-9 rounded-md object-contain" />
+              <img src={arena.logo_url} alt="" className="h-12 w-12 rounded-md object-contain" />
             ) : (
-              <div className="grid h-9 w-9 place-items-center rounded-md font-bold text-white" style={{ backgroundColor: brand }}>
+              <div className="grid h-12 w-12 place-items-center rounded-md text-lg font-bold text-white" style={{ backgroundColor: brand }}>
                 {arena.name[0]}
               </div>
             )}
@@ -339,7 +339,7 @@ function PlayerWithControls({
           </div>
           <button
             onClick={onEdit}
-            style={{ backgroundColor: "#FFD700", color: "#000" }}
+            style={{ backgroundColor: brand, color: "#fff" }}
             className="flex items-center gap-1 rounded-full px-4 py-2 text-sm font-extrabold shadow-lg transition active:scale-95"
           >
             <Scissors className="h-4 w-4" /> Editar
@@ -528,18 +528,20 @@ function ReplayEditor({
               onPointerDown={(e) => startDrag(e, "move")}
               onPointerMove={onDrag}
               onPointerUp={endDrag}
-              className="absolute cursor-move border-2 border-yellow-400 shadow-[0_0_0_1px_rgba(0,0,0,0.5)]"
+              className="absolute cursor-move border-2 shadow-[0_0_0_1px_rgba(0,0,0,0.5)]"
               style={{
                 left: `${crop.x * 100}%`, top: `${crop.y * 100}%`,
                 width: `${crop.w * 100}%`, height: `${crop.h * 100}%`,
+                borderColor: brand,
               }}
             >
-              <span className="absolute -top-6 left-0 rounded bg-yellow-400 px-1.5 py-0.5 text-[10px] font-bold text-black">{aspect}</span>
+              <span className="absolute -top-6 left-0 rounded px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: brand }}>{aspect}</span>
               <div
                 onPointerDown={(e) => startDrag(e, "resize")}
                 onPointerMove={onDrag}
                 onPointerUp={endDrag}
-                className="absolute -bottom-1.5 -right-1.5 h-4 w-4 cursor-se-resize rounded-sm bg-yellow-400 ring-2 ring-black/40"
+                className="absolute -bottom-1.5 -right-1.5 h-4 w-4 cursor-se-resize rounded-sm ring-2 ring-black/40"
+                style={{ backgroundColor: brand }}
               />
             </div>
           </div>
