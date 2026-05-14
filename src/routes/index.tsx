@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { BottomNav } from "@/components/BottomNav";
-import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { resolveReplayUrl } from "@/lib/replays";
@@ -52,6 +52,20 @@ function Home() {
   const [search, setSearch] = useState("");
   const [filterState, setFilterState] = useState<string>("all");
   const [filterCity, setFilterCity] = useState<string>("all");
+  const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+
+  useEffect(() => {
+    if (!carouselApi) return;
+    const sync = () => setCarouselIndex(carouselApi.selectedScrollSnap());
+    sync();
+    carouselApi.on("select", sync);
+    carouselApi.on("reInit", sync);
+    return () => {
+      carouselApi.off("select", sync);
+      carouselApi.off("reInit", sync);
+    };
+  }, [carouselApi]);
 
   useEffect(() => {
     (async () => {
@@ -123,11 +137,13 @@ function Home() {
       </header>
 
       <main className="mx-auto max-w-md px-4 py-4">
-        {/* Hero - Top Replays Carousel */}
+        {/* Hero - Destaques Recentes */}
         <section>
           <div className="mb-3 flex items-center gap-2">
             <Flame className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-extrabold leading-tight">Últimos Replays</h1>
+            <h1 className="text-lg font-extrabold leading-tight">
+              <span className="text-primary">🔥</span> Destaques Recentes
+            </h1>
           </div>
 
           {topLoading ? (
@@ -137,33 +153,60 @@ function Home() {
               Nenhum replay disponível ainda.
             </div>
           ) : (
-            <Carousel opts={{ align: "start", loop: true }} className="w-full">
-              <CarouselContent>
-                {topReplays.map((r) => (
-                  <CarouselItem key={r.id} className="basis-full">
-                    <button
-                      onClick={() => navigate({ to: "/arena/$id", params: { id: r.arena_id } })}
-                      className="group relative block aspect-video w-full overflow-hidden rounded-2xl border border-border bg-black text-left"
-                    >
-                      {r.thumbnail_url ? (
-                        <img src={resolveReplayUrl(r.thumbnail_url)} alt={r.arena_name}
-                          className="h-full w-full object-cover transition group-hover:scale-105" />
-                      ) : (
-                        <video src={resolveReplayUrl(r.video_url)} className="h-full w-full object-cover" muted preload="metadata" />
-                      )}
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3">
-                        <div className="flex items-end justify-between gap-2">
-                          <p className="truncate text-sm font-bold text-white">{r.arena_name}</p>
-                          <p className="shrink-0 text-[10px] text-white/70">
-                            {formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: ptBR })}
-                          </p>
+            <div className="space-y-3">
+              <Carousel
+                opts={{ align: "center", loop: topReplays.length > 1 }}
+                setApi={setCarouselApi}
+                className="relative w-full"
+              >
+                <CarouselContent>
+                  {topReplays.map((r) => (
+                    <CarouselItem key={r.id} className="basis-full">
+                      <button
+                        onClick={() => navigate({ to: "/arena/$id", params: { id: r.arena_id } })}
+                        className="group relative block aspect-video w-full overflow-hidden rounded-2xl border border-border bg-black text-left"
+                      >
+                        {r.thumbnail_url ? (
+                          <img src={resolveReplayUrl(r.thumbnail_url)} alt={r.arena_name}
+                            className="h-full w-full object-cover transition group-hover:scale-105" />
+                        ) : (
+                          <video src={resolveReplayUrl(r.video_url)} className="h-full w-full object-cover" muted preload="metadata" />
+                        )}
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3">
+                          <div className="flex items-end justify-between gap-2">
+                            <p className="truncate text-sm font-bold text-white">{r.arena_name}</p>
+                            <p className="shrink-0 text-[10px] text-white/70">
+                              {formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: ptBR })}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </button>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
+                      </button>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                {topReplays.length > 1 && (
+                  <>
+                    <CarouselPrevious className="left-2 h-9 w-9 border-0 bg-black/60 text-white hover:bg-black/80 hover:text-white" />
+                    <CarouselNext className="right-2 h-9 w-9 border-0 bg-black/60 text-white hover:bg-black/80 hover:text-white" />
+                  </>
+                )}
+              </Carousel>
+
+              {topReplays.length > 1 && (
+                <div className="flex items-center justify-center gap-1.5">
+                  {topReplays.map((r, i) => (
+                    <button
+                      key={r.id}
+                      onClick={() => carouselApi?.scrollTo(i)}
+                      aria-label={`Ir para slide ${i + 1}`}
+                      className={`h-1.5 rounded-full transition-all ${
+                        i === carouselIndex ? "w-6 bg-primary" : "w-1.5 bg-muted hover:bg-muted-foreground/40"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </section>
 
