@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Download, Loader2, Trash2, Upload } from "lucide-react";
 
-export const Route = createFileRoute("/arena")({ component: ArenaPanel });
+export const Route = createFileRoute("/painel")({ component: ArenaPanel });
 
 interface Arena { id: string; name: string; slug: string; logo_url: string | null; primary_color: string; }
 interface Court { id: string; name: string; qr_token: string; }
