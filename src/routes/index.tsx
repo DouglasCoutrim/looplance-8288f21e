@@ -103,15 +103,10 @@ function Home() {
     <div className="min-h-screen bg-background pb-24 text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center justify-between gap-2 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <img src={logoMark} alt="LoopLance" className="h-7 w-7" />
-            <span className="text-base font-extrabold tracking-tight">
-              Loop<span className="text-primary">Lance</span>
-            </span>
-          </div>
+          <img src={logoFull} alt="LoopLance" className="h-10 w-auto" />
           <button
             onClick={() => navigate({ to: "/perfil" })}
-            className="grid h-9 w-9 place-items-center rounded-full border border-border bg-card text-muted-foreground hover:text-primary"
+            className="grid h-10 w-10 place-items-center rounded-full border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/60"
             aria-label="Perfil"
           >
             <UserIcon className="h-4 w-4" />
