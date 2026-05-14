@@ -47,7 +47,7 @@ function ArenaDashboard() {
   const [selected, setSelected] = useState<Replay | null>(null);
   const [editing, setEditing] = useState<Replay | null>(null);
   const [favorited, setFavorited] = useState(false);
-  const [checkinDone, setCheckinDone] = useState(false);
+  
 
   useEffect(() => {
     (async () => {
@@ -107,17 +107,6 @@ function ArenaDashboard() {
       setFavorited(true);
     }
   }
-
-  async function checkIn() {
-    if (!user) { navigate({ to: "/login" }); return; }
-    if (!arena) return;
-    await supabase.from("favorite_arenas" as never).upsert({ user_id: user.id, arena_id: arena.id } as never).select();
-    setFavorited(true);
-    setCheckinDone(true);
-    toast.success(`Check-in feito em ${arena.name}`);
-    setTimeout(() => setCheckinDone(false), 2500);
-  }
-
   const grouped = useMemo(() => {
     const m = new Map<string, Replay[]>();
     replays.forEach((r) => {
