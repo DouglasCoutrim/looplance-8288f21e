@@ -476,6 +476,12 @@ function ReplayEditor({
       source_video_url: replay.video_url,
       timestamp_inicio: Number(start.toFixed(2)),
       duracao_segundos: clipLen,
+      start_time: Number(start.toFixed(2)),
+      end_time: Number((start + clipLen).toFixed(2)),
+      coords_json: {
+        x: Number(crop.x.toFixed(4)), y: Number(crop.y.toFixed(4)),
+        w: Number(crop.w.toFixed(4)), h: Number(crop.h.toFixed(4)),
+      },
       crop_x: Number(crop.x.toFixed(4)),
       crop_y: Number(crop.y.toFixed(4)),
       crop_w: Number(crop.w.toFixed(4)),
