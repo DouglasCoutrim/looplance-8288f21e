@@ -76,32 +76,17 @@ function Home() {
     return set;
   }, [replays]);
 
-  const states = useMemo(() => {
-    const s = new Set<string>();
-    arenas.forEach((a) => { if (a.state) s.add(a.state); });
-    return Array.from(s).sort();
-  }, [arenas]);
-
-  const cities = useMemo(() => {
-    const c = new Set<string>();
-    arenas.filter((a) => filterState === "all" || a.state === filterState)
-      .forEach((a) => { if (a.city) c.add(a.city); });
-    return Array.from(c).sort();
-  }, [arenas, filterState]);
-
   const norm = (s: string) =>
     s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
   const filteredArenas = useMemo(() => {
     const q = norm(search);
+    if (!q) return arenas;
     return arenas.filter((a) => {
-      if (filterState !== "all" && a.state !== filterState) return false;
-      if (filterCity !== "all" && a.city !== filterCity) return false;
-      if (!q) return true;
       const hay = norm([a.name, a.city, a.state].filter(Boolean).join(" "));
       return hay.includes(q);
     });
-  }, [arenas, search, filterState, filterCity]);
+  }, [arenas, search]);
 
   const enterArena = (id: string) => navigate({ to: "/arena/$id", params: { id } });
 
