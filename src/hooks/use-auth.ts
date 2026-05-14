@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "superadmin" | "admin_arena" | "player";
+export type AppRole = "admin" | "user" | "superadmin" | "admin_arena" | "player";
 
 export interface UserRole {
   role: AppRole;
@@ -65,9 +65,10 @@ export function useAuth() {
     setLoading(false);
   }
 
-  const isSuperAdmin = roles.some((r) => r.role === "superadmin");
+  const isSuperAdmin = roles.some((r) => r.role === "superadmin" || r.role === "admin");
   const adminArenaId = roles.find((r) => r.role === "admin_arena")?.arena_id ?? null;
   const playerArenaIds = roles.filter((r) => r.role === "player").map((r) => r.arena_id!).filter(Boolean);
+  const isAdmin = isSuperAdmin || Boolean(adminArenaId);
 
-  return { session, user, roles, loading, isSuperAdmin, adminArenaId, playerArenaIds };
+  return { session, user, roles, loading, isSuperAdmin, isAdmin, adminArenaId, playerArenaIds };
 }

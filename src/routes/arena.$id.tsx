@@ -1,11 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getArenaClient } from "@/lib/arena-client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -27,7 +25,6 @@ interface PublicArena {
   id: string; slug: string; name: string;
   logo_url: string | null; primary_color: string;
   city: string | null; state: string | null;
-  supabase_url: string | null; supabase_anon_key: string | null;
 }
 interface Quadra { id: string; nome: string }
 interface Replay {
@@ -43,7 +40,6 @@ function ArenaDashboard() {
   const [loading, setLoading] = useState(true);
   const [quadras, setQuadras] = useState<Quadra[]>([]);
   const [replays, setReplays] = useState<Replay[]>([]);
-  const [localError, setLocalError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Replay | null>(null);
   const [editing, setEditing] = useState<Replay | null>(null);
   const [favorited, setFavorited] = useState(false);
@@ -64,29 +60,31 @@ function ArenaDashboard() {
   }, [arena?.primary_color]);
 
   useEffect(() => {
-    if (!arena?.supabase_url || !arena?.supabase_anon_key) return;
+    if (!arena?.id) return;
     (async () => {
-      try {
-        const local = getArenaClient(arena.supabase_url!, arena.supabase_anon_key!);
-        const [{ data: q, error: qErr }, { data: r, error: rErr }] = await Promise.all([
-          local.from("quadras").select("id,nome").order("nome"),
-          local.from("replays")
-            .select("id,video_url,thumbnail_url,data_evento,hora_evento,quadra_id")
-            .order("data_evento", { ascending: false })
-            .order("hora_evento", { ascending: false })
-            .limit(500),
-        ]);
-        if (qErr) throw qErr;
-        if (rErr) throw rErr;
-        setQuadras((q ?? []) as Quadra[]);
-        const rs = (r ?? []) as Replay[];
-        setReplays(rs);
-        if (rs.length) setSelected(rs[0]);
-      } catch (e: unknown) {
-        setLocalError(e instanceof Error ? e.message : "Erro ao carregar vídeos");
-      }
+      const [{ data: q }, { data: r }] = await Promise.all([
+        supabase.from("courts").select("id,name").eq("arena_id", arena.id).order("name"),
+        supabase.from("videos")
+          .select("id,video_url,thumbnail_url,created_at,court_id")
+          .eq("arena_id", arena.id)
+          .order("created_at", { ascending: false })
+          .limit(500),
+      ]);
+
+      setQuadras(((q ?? []) as { id: string; name: string }[]).map((court) => ({ id: court.id, nome: court.name })));
+      const rs = ((r ?? []) as { id: string; video_url: string; thumbnail_url: string | null; created_at: string; court_id: string | null }[])
+        .map((video) => ({
+          id: video.id,
+          video_url: video.video_url,
+          thumbnail_url: video.thumbnail_url,
+          data_evento: video.created_at.slice(0, 10),
+          hora_evento: video.created_at.split("T")[1]?.slice(0, 8) ?? "00:00:00",
+          quadra_id: video.court_id,
+        }));
+      setReplays(rs);
+      setSelected(rs[0] ?? null);
     })();
-  }, [arena?.id, arena?.supabase_url, arena?.supabase_anon_key]);
+  }, [arena?.id]);
 
   useEffect(() => {
     if (!user || !arena) return;
@@ -165,19 +163,13 @@ function ArenaDashboard() {
           </div>
           <div className="flex items-center gap-1">
             <Button size="icon" variant="ghost" onClick={toggleFav} aria-label="Favoritar">
-              <Star className={`h-5 w-5 ${favorited ? "fill-yellow-400 text-yellow-400" : ""}`} />
+              <Star className={`h-5 w-5 ${favorited ? "fill-primary text-primary" : ""}`} />
             </Button>
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-3xl px-4">
-        {localError && (
-          <Card className="my-4 border-destructive/50 p-4 text-sm text-destructive">
-            Não foi possível conectar ao banco da arena: {localError}
-          </Card>
-        )}
-
         <section className="pt-4">
           <PlayerWithControls selected={selected} brand={brand} onEdit={() => selected && setEditing(selected)} />
           {selected && (

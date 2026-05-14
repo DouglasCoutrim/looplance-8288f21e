@@ -46,7 +46,7 @@ function ArenaPanel() {
 
   if (loading) return <FullLoader />;
   if (!user) return <Navigate to="/login" />;
-  if (!adminArenaId) return <Navigate to="/acesso-negado" />;
+  if (!adminArenaId) return <Navigate to="/" />;
 
   async function saveArenaName() {
     if (!arena) return;
