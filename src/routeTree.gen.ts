@@ -12,9 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ReplaysRouteImport } from './routes/replays'
 import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as PainelRouteImport } from './routes/painel'
 import { Route as MeusReplaysRouteImport } from './routes/meus-replays'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as ArenaRouteImport } from './routes/arena'
 import { Route as AoVivoRouteImport } from './routes/ao-vivo'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AcessoNegadoRouteImport } from './routes/acesso-negado'
@@ -37,6 +37,11 @@ const PerfilRoute = PerfilRouteImport.update({
   path: '/perfil',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PainelRoute = PainelRouteImport.update({
+  id: '/painel',
+  path: '/painel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MeusReplaysRoute = MeusReplaysRouteImport.update({
   id: '/meus-replays',
   path: '/meus-replays',
@@ -45,11 +50,6 @@ const MeusReplaysRoute = MeusReplaysRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ArenaRoute = ArenaRouteImport.update({
-  id: '/arena',
-  path: '/arena',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AoVivoRoute = AoVivoRouteImport.update({
@@ -73,9 +73,9 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ArenaIdRoute = ArenaIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ArenaRoute,
+  id: '/arena/$id',
+  path: '/arena/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminArenaIdRoute = AdminArenaIdRouteImport.update({
   id: '/arena/$id',
@@ -88,9 +88,9 @@ export interface FileRoutesByFullPath {
   '/acesso-negado': typeof AcessoNegadoRoute
   '/admin': typeof AdminRouteWithChildren
   '/ao-vivo': typeof AoVivoRoute
-  '/arena': typeof ArenaRouteWithChildren
   '/login': typeof LoginRoute
   '/meus-replays': typeof MeusReplaysRoute
+  '/painel': typeof PainelRoute
   '/perfil': typeof PerfilRoute
   '/replays': typeof ReplaysRoute
   '/signup': typeof SignupRoute
@@ -102,9 +102,9 @@ export interface FileRoutesByTo {
   '/acesso-negado': typeof AcessoNegadoRoute
   '/admin': typeof AdminRouteWithChildren
   '/ao-vivo': typeof AoVivoRoute
-  '/arena': typeof ArenaRouteWithChildren
   '/login': typeof LoginRoute
   '/meus-replays': typeof MeusReplaysRoute
+  '/painel': typeof PainelRoute
   '/perfil': typeof PerfilRoute
   '/replays': typeof ReplaysRoute
   '/signup': typeof SignupRoute
@@ -117,9 +117,9 @@ export interface FileRoutesById {
   '/acesso-negado': typeof AcessoNegadoRoute
   '/admin': typeof AdminRouteWithChildren
   '/ao-vivo': typeof AoVivoRoute
-  '/arena': typeof ArenaRouteWithChildren
   '/login': typeof LoginRoute
   '/meus-replays': typeof MeusReplaysRoute
+  '/painel': typeof PainelRoute
   '/perfil': typeof PerfilRoute
   '/replays': typeof ReplaysRoute
   '/signup': typeof SignupRoute
@@ -133,9 +133,9 @@ export interface FileRouteTypes {
     | '/acesso-negado'
     | '/admin'
     | '/ao-vivo'
-    | '/arena'
     | '/login'
     | '/meus-replays'
+    | '/painel'
     | '/perfil'
     | '/replays'
     | '/signup'
@@ -147,9 +147,9 @@ export interface FileRouteTypes {
     | '/acesso-negado'
     | '/admin'
     | '/ao-vivo'
-    | '/arena'
     | '/login'
     | '/meus-replays'
+    | '/painel'
     | '/perfil'
     | '/replays'
     | '/signup'
@@ -161,9 +161,9 @@ export interface FileRouteTypes {
     | '/acesso-negado'
     | '/admin'
     | '/ao-vivo'
-    | '/arena'
     | '/login'
     | '/meus-replays'
+    | '/painel'
     | '/perfil'
     | '/replays'
     | '/signup'
@@ -176,12 +176,13 @@ export interface RootRouteChildren {
   AcessoNegadoRoute: typeof AcessoNegadoRoute
   AdminRoute: typeof AdminRouteWithChildren
   AoVivoRoute: typeof AoVivoRoute
-  ArenaRoute: typeof ArenaRouteWithChildren
   LoginRoute: typeof LoginRoute
   MeusReplaysRoute: typeof MeusReplaysRoute
+  PainelRoute: typeof PainelRoute
   PerfilRoute: typeof PerfilRoute
   ReplaysRoute: typeof ReplaysRoute
   SignupRoute: typeof SignupRoute
+  ArenaIdRoute: typeof ArenaIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -207,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PerfilRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/painel': {
+      id: '/painel'
+      path: '/painel'
+      fullPath: '/painel'
+      preLoaderRoute: typeof PainelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/meus-replays': {
       id: '/meus-replays'
       path: '/meus-replays'
@@ -219,13 +227,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/arena': {
-      id: '/arena'
-      path: '/arena'
-      fullPath: '/arena'
-      preLoaderRoute: typeof ArenaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ao-vivo': {
@@ -258,10 +259,10 @@ declare module '@tanstack/react-router' {
     }
     '/arena/$id': {
       id: '/arena/$id'
-      path: '/$id'
+      path: '/arena/$id'
       fullPath: '/arena/$id'
       preLoaderRoute: typeof ArenaIdRouteImport
-      parentRoute: typeof ArenaRoute
+      parentRoute: typeof rootRouteImport
     }
     '/admin/arena/$id': {
       id: '/admin/arena/$id'
@@ -283,27 +284,18 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
-interface ArenaRouteChildren {
-  ArenaIdRoute: typeof ArenaIdRoute
-}
-
-const ArenaRouteChildren: ArenaRouteChildren = {
-  ArenaIdRoute: ArenaIdRoute,
-}
-
-const ArenaRouteWithChildren = ArenaRoute._addFileChildren(ArenaRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AcessoNegadoRoute: AcessoNegadoRoute,
   AdminRoute: AdminRouteWithChildren,
   AoVivoRoute: AoVivoRoute,
-  ArenaRoute: ArenaRouteWithChildren,
   LoginRoute: LoginRoute,
   MeusReplaysRoute: MeusReplaysRoute,
+  PainelRoute: PainelRoute,
   PerfilRoute: PerfilRoute,
   ReplaysRoute: ReplaysRoute,
   SignupRoute: SignupRoute,
+  ArenaIdRoute: ArenaIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

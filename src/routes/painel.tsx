@@ -12,9 +12,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Download, Loader2, Trash2, Upload } from "lucide-react";
 
-export const Route = createFileRoute("/arena")({ component: ArenaPanel });
+export const Route = createFileRoute("/painel")({ component: ArenaPanel });
 
-interface Arena { id: string; name: string; slug: string; logo_url: string | null; primary_color: string; }
+interface Arena { id: string; name: string; slug: string; logo_url: string | null; primary_color: string; city: string | null; state: string | null; }
 interface Court { id: string; name: string; qr_token: string; }
 interface Video { id: string; title: string; video_url: string; court_id: string | null; created_at: string; }
 
@@ -25,6 +25,8 @@ function ArenaPanel() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [newCourt, setNewCourt] = useState("");
   const [arenaName, setArenaName] = useState("");
+  const [arenaCity, setArenaCity] = useState("");
+  const [arenaState, setArenaState] = useState("");
   const [uploading, setUploading] = useState(false);
   const [videoTitle, setVideoTitle] = useState("");
   const [videoCourtId, setVideoCourtId] = useState("");
@@ -38,7 +40,7 @@ function ArenaPanel() {
       supabase.from("courts").select("*").eq("arena_id", adminArenaId).order("name"),
       supabase.from("videos").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }),
     ]);
-    if (a) { setArena(a as Arena); setArenaName(a.name); }
+    if (a) { setArena(a as Arena); setArenaName(a.name); setArenaCity((a as Arena).city ?? ""); setArenaState((a as Arena).state ?? ""); }
     setCourts((c ?? []) as Court[]);
     setVideos((v ?? []) as Video[]);
   }
@@ -50,7 +52,11 @@ function ArenaPanel() {
 
   async function saveArenaName() {
     if (!arena) return;
-    const { error } = await supabase.from("arenas").update({ name: arenaName }).eq("id", arena.id);
+    const { error } = await supabase.from("arenas").update({
+      name: arenaName,
+      city: arenaCity.trim() || null,
+      state: arenaState.trim() || null,
+    }).eq("id", arena.id);
     if (error) return toast.error(error.message);
     toast.success("Arena atualizada");
     load();
@@ -152,6 +158,16 @@ function ArenaPanel() {
                 <div>
                   <Label>Nome da arena</Label>
                   <Input value={arenaName} onChange={(e) => setArenaName(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Cidade</Label>
+                    <Input value={arenaCity} onChange={(e) => setArenaCity(e.target.value)} placeholder="Ex.: Cristalina" />
+                  </div>
+                  <div>
+                    <Label>Estado (UF)</Label>
+                    <Input value={arenaState} onChange={(e) => setArenaState(e.target.value)} placeholder="Ex.: GO" maxLength={2} />
+                  </div>
                 </div>
                 <div>
                   <Label>Slug (URL pública)</Label>
