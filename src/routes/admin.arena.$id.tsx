@@ -23,6 +23,8 @@ interface Arena {
   supabase_anon_key: string | null;
   logo_url: string | null;
   primary_color: string;
+  city: string | null;
+  state: string | null;
 }
 interface Sponsor { id: string; name: string; logo_url: string; link_url: string | null; display_order: number }
 interface BtnRow {
@@ -50,7 +52,7 @@ function ArenaDetailPage() {
     setLoadError(null);
     const { data: a, error: arenaError } = await supabase
       .from("arenas")
-      .select("id,name,slug,supabase_url,supabase_service_key,supabase_anon_key,logo_url,primary_color")
+      .select("id,name,slug,supabase_url,supabase_service_key,supabase_anon_key,logo_url,primary_color,city,state")
       .eq("id", id).maybeSingle();
     if (arenaError) {
       setLoadError(arenaError.message);
@@ -668,15 +670,27 @@ function UserList({ title, rows, onRemove }: { title: string; rows: UserRow[]; o
 function WhiteLabelCard({ arena, onSaved }: { arena: Arena; onSaved: () => void }) {
   const [color, setColor] = useState(arena.primary_color);
   const [name, setName] = useState(arena.name);
+  const [city, setCity] = useState(arena.city ?? "");
+  const [stateUf, setStateUf] = useState(arena.state ?? "");
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { setColor(arena.primary_color); setName(arena.name); }, [arena.id]);
+  useEffect(() => {
+    setColor(arena.primary_color);
+    setName(arena.name);
+    setCity(arena.city ?? "");
+    setStateUf(arena.state ?? "");
+  }, [arena.id]);
 
   async function save() {
     setBusy(true);
-    const { error } = await supabase.from("arenas").update({ primary_color: color, name }).eq("id", arena.id);
+    const { error } = await supabase.from("arenas").update({
+      primary_color: color,
+      name,
+      city: city.trim() || null,
+      state: stateUf.trim().toUpperCase() || null,
+    }).eq("id", arena.id);
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Identidade visual salva"); onSaved();
@@ -698,13 +712,23 @@ function WhiteLabelCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
   return (
     <Card className="p-6">
       <h2 className="mb-1 text-lg font-semibold">White Label</h2>
-      <p className="mb-4 text-sm text-muted-foreground">Identidade visual exibida ao cliente final.</p>
+      <p className="mb-4 text-sm text-muted-foreground">Identidade visual e localização exibidas ao cliente final.</p>
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-4">
           <div>
             <Label>Nome da arena</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2">
+              <Label>Cidade</Label>
+              <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="São Paulo" />
+            </div>
+            <div>
+              <Label>UF</Label>
+              <Input value={stateUf} onChange={(e) => setStateUf(e.target.value.slice(0, 2))} placeholder="SP" maxLength={2} />
+            </div>
           </div>
           <div>
             <Label>Cor principal</Label>
