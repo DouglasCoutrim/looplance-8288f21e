@@ -121,7 +121,7 @@ function ArenaPanel() {
   }
 
   if (!arena) return <FullLoader />;
-  const playerUrl = (token: string) => `${window.location.origin}/a/${arena.slug}?q=${token}`;
+  const playerUrl = (token: string) => `${window.location.origin}/arena/${arena.id}?q=${token}`;
 
   return (
     <AppShell title={`Painel · ${arena.name}`}>
