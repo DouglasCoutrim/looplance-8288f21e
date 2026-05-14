@@ -25,6 +25,8 @@ function ArenaPanel() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [newCourt, setNewCourt] = useState("");
   const [arenaName, setArenaName] = useState("");
+  const [arenaCity, setArenaCity] = useState("");
+  const [arenaState, setArenaState] = useState("");
   const [uploading, setUploading] = useState(false);
   const [videoTitle, setVideoTitle] = useState("");
   const [videoCourtId, setVideoCourtId] = useState("");
