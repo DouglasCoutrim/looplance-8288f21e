@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as MeusReplaysRouteImport } from './routes/meus-replays'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ArenaRouteImport } from './routes/arena'
 import { Route as AppRouteImport } from './routes/app'
@@ -24,6 +25,11 @@ import { Route as AdminArenaIdRouteImport } from './routes/admin.arena.$id'
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeusReplaysRoute = MeusReplaysRouteImport.update({
+  id: '/meus-replays',
+  path: '/meus-replays',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRoute
   '/arena': typeof ArenaRouteWithChildren
   '/login': typeof LoginRoute
+  '/meus-replays': typeof MeusReplaysRoute
   '/signup': typeof SignupRoute
   '/a/$slug': typeof ASlugRoute
   '/arena/$id': typeof ArenaIdRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppRoute
   '/arena': typeof ArenaRouteWithChildren
   '/login': typeof LoginRoute
+  '/meus-replays': typeof MeusReplaysRoute
   '/signup': typeof SignupRoute
   '/a/$slug': typeof ASlugRoute
   '/arena/$id': typeof ArenaIdRoute
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/app': typeof AppRoute
   '/arena': typeof ArenaRouteWithChildren
   '/login': typeof LoginRoute
+  '/meus-replays': typeof MeusReplaysRoute
   '/signup': typeof SignupRoute
   '/a/$slug': typeof ASlugRoute
   '/arena/$id': typeof ArenaIdRoute
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/arena'
     | '/login'
+    | '/meus-replays'
     | '/signup'
     | '/a/$slug'
     | '/arena/$id'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/arena'
     | '/login'
+    | '/meus-replays'
     | '/signup'
     | '/a/$slug'
     | '/arena/$id'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/arena'
     | '/login'
+    | '/meus-replays'
     | '/signup'
     | '/a/$slug'
     | '/arena/$id'
@@ -166,6 +178,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRoute
   ArenaRoute: typeof ArenaRouteWithChildren
   LoginRoute: typeof LoginRoute
+  MeusReplaysRoute: typeof MeusReplaysRoute
   SignupRoute: typeof SignupRoute
   ASlugRoute: typeof ASlugRoute
   PlaySlugRoute: typeof PlaySlugRoute
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meus-replays': {
+      id: '/meus-replays'
+      path: '/meus-replays'
+      fullPath: '/meus-replays'
+      preLoaderRoute: typeof MeusReplaysRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -280,6 +300,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRoute,
   ArenaRoute: ArenaRouteWithChildren,
   LoginRoute: LoginRoute,
+  MeusReplaysRoute: MeusReplaysRoute,
   SignupRoute: SignupRoute,
   ASlugRoute: ASlugRoute,
   PlaySlugRoute: PlaySlugRoute,
