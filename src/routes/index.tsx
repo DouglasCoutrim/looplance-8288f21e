@@ -44,10 +44,10 @@ function Home() {
   const { user } = useAuth();
   const [arenas, setArenas] = useState<Arena[]>([]);
   const [replays, setReplays] = useState<GlobalReplay[]>([]);
+  const [topReplays, setTopReplays] = useState<GlobalReplay[]>([]);
+  const [topLoading, setTopLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterState, setFilterState] = useState("all");
-  const [filterCity, setFilterCity] = useState("all");
 
   useEffect(() => {
     (async () => {
