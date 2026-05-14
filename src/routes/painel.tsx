@@ -52,7 +52,11 @@ function ArenaPanel() {
 
   async function saveArenaName() {
     if (!arena) return;
-    const { error } = await supabase.from("arenas").update({ name: arenaName }).eq("id", arena.id);
+    const { error } = await supabase.from("arenas").update({
+      name: arenaName,
+      city: arenaCity.trim() || null,
+      state: arenaState.trim() || null,
+    }).eq("id", arena.id);
     if (error) return toast.error(error.message);
     toast.success("Arena atualizada");
     load();
