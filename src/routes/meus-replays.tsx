@@ -137,7 +137,7 @@ function statusInfo(s: string) {
     case "error":
       return { label: "Erro", Icon: XCircle, cls: "bg-red-600 text-white" };
     default:
-      return { label: "Pendente", Icon: Clock, cls: "bg-yellow-500 text-black" };
+      return { label: "Pendente", Icon: Clock, cls: "bg-primary text-primary-foreground" };
   }
 }
 
