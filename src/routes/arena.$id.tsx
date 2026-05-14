@@ -148,9 +148,9 @@ function ArenaDashboard() {
               <ArrowLeft className="h-5 w-5" />
             </button>
             {arena.logo_url ? (
-              <img src={arena.logo_url} alt="" className="h-9 w-9 rounded-md object-contain" />
+              <img src={arena.logo_url} alt="" className="h-12 w-12 rounded-md object-contain" />
             ) : (
-              <div className="grid h-9 w-9 place-items-center rounded-md font-bold text-white" style={{ backgroundColor: brand }}>
+              <div className="grid h-12 w-12 place-items-center rounded-md text-lg font-bold text-white" style={{ backgroundColor: brand }}>
                 {arena.name[0]}
               </div>
             )}
