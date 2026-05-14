@@ -106,37 +106,61 @@ function Home() {
       </header>
 
       <main className="mx-auto max-w-md px-4 py-4">
-        {/* Seletor */}
+        {/* Hero - Top Replays Carousel */}
         <section>
-          <h1 className="text-2xl font-extrabold leading-tight">
-            Encontre sua <span className="text-primary">arena</span>
-          </h1>
-          <p className="mt-1 text-xs text-muted-foreground">Veja lances ao vivo e gere seus melhores replays.</p>
-
-          <div className="mt-4 space-y-2">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar arena ou cidade…" className="h-11 pl-9" />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <Select value={filterState} onValueChange={(v) => { setFilterState(v); setFilterCity("all"); }}>
-                <SelectTrigger className="h-10"><SelectValue placeholder="Estado" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos estados</SelectItem>
-                  {states.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Select value={filterCity} onValueChange={setFilterCity}>
-                <SelectTrigger className="h-10"><SelectValue placeholder="Cidade" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas cidades</SelectItem>
-                  {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="mb-3 flex items-center gap-2">
+            <Flame className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-extrabold leading-tight">Últimos Replays</h1>
           </div>
 
+          {topLoading ? (
+            <Skeleton className="aspect-video w-full rounded-2xl" />
+          ) : topReplays.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
+              Nenhum replay disponível ainda.
+            </div>
+          ) : (
+            <Carousel opts={{ align: "start", loop: true }} className="w-full">
+              <CarouselContent>
+                {topReplays.map((r) => (
+                  <CarouselItem key={r.id} className="basis-full">
+                    <button
+                      onClick={() => navigate({ to: "/arena/$id", params: { id: r.arena_id } })}
+                      className="group relative block aspect-video w-full overflow-hidden rounded-2xl border border-border bg-black text-left"
+                    >
+                      {r.thumbnail_url ? (
+                        <img src={r.thumbnail_url} alt={r.arena_name}
+                          className="h-full w-full object-cover transition group-hover:scale-105" />
+                      ) : (
+                        <video src={r.video_url} className="h-full w-full object-cover" muted preload="metadata" />
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3">
+                        <div className="flex items-end justify-between gap-2">
+                          <p className="truncate text-sm font-bold text-white">{r.arena_name}</p>
+                          <p className="shrink-0 text-[10px] text-white/70">
+                            {formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: ptBR })}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+          )}
+        </section>
+
+        {/* Buscar arena */}
+        <section className="mt-6">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar arena ou cidade…" className="h-11 pl-9" />
+          </div>
+        </section>
+
+        <section className="mt-4">
+          <div className="space-y-2">
           <div className="mt-5 space-y-2">
             {loading ? (
               <div className="grid place-items-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
