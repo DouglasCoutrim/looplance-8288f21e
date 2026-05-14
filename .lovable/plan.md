@@ -1,54 +1,73 @@
-## Objetivo
-Adicionar exclusão de arenas, cadastro automático de novos usuários como `player` com promoção manual, e automação completa do hardware ARC-968 (12 botões K1–K12) com vinculação exclusiva às câmeras.
+## Diagnóstico
 
-## 1. Exclusão de Arenas
-- Na lista do SuperAdmin (`/admin`), adicionar botão "Excluir" com `AlertDialog` de confirmação.
-- DELETE em cascata via migration: ajustar FKs lógicas (arena_buttons, cameras, courts, videos, zero_delay_boards, user_roles) para `ON DELETE CASCADE` recriando as constraints.
-- Apenas SuperAdmin vê o botão (RLS `arenas_super_all` já permite).
+Investiguei os dois bugs reportados.
 
-## 2. Cadastro automático como Player + promoção
-- Atualizar a função `handle_new_user()` para também inserir em `user_roles` com `role = 'player'` e `arena_id = NULL`.
-- Garantir trigger `on_auth_user_created` em `auth.users` (criar se não existir).
-- Nova aba **"Usuários Globais"** na rota `/admin` (apenas SuperAdmin):
-  - Lista todos os profiles + roles atuais.
-  - Ações: promover a `superadmin`, definir como `admin_arena` (com seleção de arena), ou rebaixar a `player`.
-  - Implementado via `INSERT`/`DELETE` em `user_roles` (RLS já cobre).
+### 1. Player piscando ao clicar em vídeo (BUG REAL — causa raiz encontrada)
 
-## 3. Hardware ARC-968 — schema
-Migration adaptada ao schema atual (mantemos nomes em inglês já existentes: `zero_delay_boards`, `arena_buttons`, `cameras`):
+**Não é problema de `useState`/`useRef` no player.** O componente `PlayerWithControls` já usa `useRef` corretamente, e o `<video key={selected.id}>` força remount apenas quando o vídeo muda.
 
-- `zero_delay_boards`: adicionar coluna `model TEXT NOT NULL DEFAULT 'ARC-968'`.
-- `arena_buttons`: adicionar colunas
-  - `board_id UUID` (referência a `zero_delay_boards.id`)
-  - `button_number INT`
-  - `hardware_pin TEXT` (K1, K2, …)
-  - `camera_id UUID` (espelho da associação, para o script Python)
-  - índice único `(board_id, button_number)`.
-- Função `generate_arc968_buttons()` + trigger `AFTER INSERT ON zero_delay_boards` que insere os 12 botões com o mapeamento solicitado:
-  K1, K2, K3, K4, L2, R2, L1, R1, SE, ST, K11, K12.
-- Trigger `AFTER INSERT/UPDATE/DELETE ON cameras` que sincroniza `arena_buttons.camera_id` com `cameras.button_id` (mantém os dois lados consistentes; o script Python lê de `arena_buttons`).
+A causa real é um **conflito de rotas do TanStack Router (file-based flat routing)**:
 
-## 4. UI — `/admin/arena/[id]`
+- Existe `src/routes/arena.tsx` (painel admin `/arena`)
+- Existe `src/routes/arena.$id.tsx` (dashboard público `/arena/:id`)
 
-### Aba Hardware
-- Ao cadastrar uma placa, exibir grid 4×3 com os 12 botões da placa.
-- Cada botão mostra: nome amigável (`Botão 01 (K1)`), pino, e status:
-  - Verde "Livre" se `camera_id IS NULL`
-  - Laranja "Em uso → {nome da câmera}" caso contrário.
+Pela convenção do TanStack, `arena.tsx` é tratado como **layout pai** de `arena.$id.tsx`. Mas o `ArenaPanel` em `arena.tsx`:
+1. Não renderiza `<Outlet />`
+2. Faz `if (!adminArenaId) return <Navigate to="/" />`
 
-### Aba Câmeras
-- Dropdown "Vincular Botão" no formulário de criação/edição:
-  - Lista apenas botões da arena com `camera_id IS NULL` **ou** o botão atualmente vinculado à câmera em edição.
-  - Mostra rótulo amigável `Botão NN (PINO)`.
-- Ao salvar:
-  - `UPDATE cameras SET button_id = ...` (trigger sincroniza `arena_buttons.camera_id`).
-  - Ao desvincular/excluir câmera, o botão volta a ficar disponível automaticamente.
+Resultado: qualquer usuário comum (sem `admin_arena`) que acessa `/arena/<id>` cai dentro do layout pai, é imediatamente redirecionado para `/`, e o componente filho `ArenaDashboard` nunca chega a montar. Visualmente isso é o "flick" — a página /arena/$id pisca e volta pra home.
 
-## 5. Observação sobre a SQL enviada
-Sua SQL referencia tabelas `dispositivos` e `botoes`, que não existem neste projeto — usamos `zero_delay_boards` e `arena_buttons`. Vou aplicar a mesma lógica (trigger + 12 botões com o mapeamento K1…K12) sobre as tabelas atuais para não quebrar o restante do sistema. Se preferir renomear as tabelas para `dispositivos`/`botoes`, me avise antes.
+### 2. Filtros Estado / Cidade vazios (NÃO é bug de código)
 
-## Arquivos a alterar
-- Migrations Supabase (delete cascade, handle_new_user, schema hardware, triggers).
-- `src/routes/admin.tsx` — botão excluir arena + aba Usuários Globais.
-- `src/routes/admin.arena.$id.tsx` — grid de 12 botões na aba Hardware; dropdown filtrado na aba Câmeras com sincronização.
-- `src/integrations/supabase/types.ts` — regenerado após migration.
+O componente já lê `arenas` direto e calcula estados/cidades distintos via `useMemo`. Confirmei na base de dados:
+
+```
+count | state_filled | city_filled
+   1  |       0      |      0
+```
+
+A única arena cadastrada (`CTC Cristalina`) tem as colunas `city` e `state` **NULL**. Os selects estão corretamente vazios porque não há dado. A normalização `{ label, value }` é desnecessária aqui — `Select` do shadcn aceita strings primitivas e o código já mapeia certo.
+
+A correção real é **preencher esses dados** — seja via painel admin (`/arena` → aba Arena) ou direto no banco.
+
+---
+
+## Plano
+
+### A. Fix do flicker — renomear o painel admin
+
+Renomear `src/routes/arena.tsx` → `src/routes/painel.tsx` (rota `/painel`). Isso elimina o conflito de layout. `arena.$id.tsx` passa a ser uma rota raiz de primeiro nível sem pai, e `ArenaDashboard` monta normalmente.
+
+Atualizar referências:
+- `src/components/AppSidebar.tsx` — link "Painel da arena" → `/painel`
+- Qualquer redirect ou link interno que aponte para `/arena` (verificar `admin.tsx`, `acesso-negado.tsx`, etc.)
+
+### B. Adicionar campos City / State no painel admin
+
+Em `src/routes/painel.tsx` (renomeado), adicionar inputs para `city` e `state` na aba "Arena", incluí-los no `update` do `saveArenaName` (renomear para `saveArenaInfo`). Assim o admin consegue popular os filtros que o usuário esperava ver.
+
+### C. Confirmar editor de corte (já está OK)
+
+Verifiquei o `ReplayEditor` em `arena.$id.tsx`: já envia coordenadas normalizadas `coords_json: { x, y, w, h }` (0..1), `start_time`, `end_time`, `aspect_ratio`, `arena_id`, `status: 'pending'` para `replay_jobs`. **Nenhuma alteração necessária** — a estrutura JSON está pronta para o script Python externo.
+
+### D. Manter
+
+- Bottom Tab Bar
+- Home híbrida (busca + feed global)
+- Identidade laranja LoopLance (`#FF6600`)
+- `useRef` no `<video>` do player
+
+---
+
+## Detalhes técnicos
+
+| Arquivo | Ação |
+|---|---|
+| `src/routes/arena.tsx` | Renomear para `src/routes/painel.tsx` + trocar `createFileRoute("/arena")` por `createFileRoute("/painel")` |
+| `src/routes/painel.tsx` | Adicionar campos `city` / `state` no form e no `update` |
+| `src/components/AppSidebar.tsx` | Atualizar link `/arena` → `/painel` |
+| `src/routes/admin.tsx`, `acesso-negado.tsx` | Verificar/atualizar referências a `/arena` |
+| `src/routes/arena.$id.tsx` | Sem mudanças |
+| `src/routes/index.tsx` | Sem mudanças (filtros já funcionam, só faltam dados) |
+
+Resultado esperado: usuário comum clica em qualquer vídeo no feed → vai pra `/arena/<id>` → dashboard renderiza com player funcional. Admin acessa `/painel` para cadastrar city/state, e os filtros do home passam a popular automaticamente.
