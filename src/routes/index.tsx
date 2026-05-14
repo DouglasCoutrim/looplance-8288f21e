@@ -102,11 +102,11 @@ function Home() {
   return (
     <div className="min-h-screen bg-background pb-24 text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center justify-between gap-2 px-4 py-3">
-          <img src={logoFull} alt="LoopLance" className="h-10 w-auto" />
+        <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 py-2">
+          <img src={logoFull} alt="LoopLance" className="h-14 w-auto" />
           <button
             onClick={() => navigate({ to: "/perfil" })}
-            className="grid h-10 w-10 place-items-center rounded-full border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/60"
+            className="grid h-10 w-10 place-items-center rounded-full text-muted-foreground transition hover:bg-card hover:text-primary"
             aria-label="Perfil"
           >
             <UserIcon className="h-4 w-4" />
