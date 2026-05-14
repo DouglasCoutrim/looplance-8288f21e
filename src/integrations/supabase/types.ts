@@ -124,6 +124,7 @@ export type Database = {
       arenas: {
         Row: {
           active: boolean
+          city: string | null
           created_at: string
           id: string
           logo_url: string | null
@@ -131,12 +132,14 @@ export type Database = {
           owner_id: string | null
           primary_color: string
           slug: string
+          state: string | null
           supabase_anon_key: string | null
           supabase_service_key: string | null
           supabase_url: string | null
         }
         Insert: {
           active?: boolean
+          city?: string | null
           created_at?: string
           id?: string
           logo_url?: string | null
@@ -144,12 +147,14 @@ export type Database = {
           owner_id?: string | null
           primary_color?: string
           slug: string
+          state?: string | null
           supabase_anon_key?: string | null
           supabase_service_key?: string | null
           supabase_url?: string | null
         }
         Update: {
           active?: boolean
+          city?: string | null
           created_at?: string
           id?: string
           logo_url?: string | null
@@ -157,6 +162,7 @@ export type Database = {
           owner_id?: string | null
           primary_color?: string
           slug?: string
+          state?: string | null
           supabase_anon_key?: string | null
           supabase_service_key?: string | null
           supabase_url?: string | null
@@ -251,6 +257,27 @@ export type Database = {
           },
         ]
       }
+      favorite_arenas: {
+        Row: {
+          arena_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          arena_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          arena_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       global_replays: {
         Row: {
           arena_id: string
@@ -323,6 +350,66 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+        }
+        Relationships: []
+      }
+      replay_jobs: {
+        Row: {
+          arena_id: string
+          aspect_ratio: string
+          created_at: string
+          crop_h: number
+          crop_w: number
+          crop_x: number
+          crop_y: number
+          duracao_segundos: number
+          id: string
+          output_url: string | null
+          source_video_id: string | null
+          source_video_url: string | null
+          status: string
+          thumbnail_url: string | null
+          timestamp_inicio: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          arena_id: string
+          aspect_ratio?: string
+          created_at?: string
+          crop_h?: number
+          crop_w?: number
+          crop_x?: number
+          crop_y?: number
+          duracao_segundos?: number
+          id?: string
+          output_url?: string | null
+          source_video_id?: string | null
+          source_video_url?: string | null
+          status?: string
+          thumbnail_url?: string | null
+          timestamp_inicio?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          arena_id?: string
+          aspect_ratio?: string
+          created_at?: string
+          crop_h?: number
+          crop_w?: number
+          crop_x?: number
+          crop_y?: number
+          duracao_segundos?: number
+          id?: string
+          output_url?: string | null
+          source_video_id?: string | null
+          source_video_url?: string | null
+          status?: string
+          thumbnail_url?: string | null
+          timestamp_inicio?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -504,31 +591,37 @@ export type Database = {
       public_arenas: {
         Row: {
           active: boolean | null
+          city: string | null
           id: string | null
           logo_url: string | null
           name: string | null
           primary_color: string | null
           slug: string | null
+          state: string | null
           supabase_anon_key: string | null
           supabase_url: string | null
         }
         Insert: {
           active?: boolean | null
+          city?: string | null
           id?: string | null
           logo_url?: string | null
           name?: string | null
           primary_color?: string | null
           slug?: string | null
+          state?: string | null
           supabase_anon_key?: string | null
           supabase_url?: string | null
         }
         Update: {
           active?: boolean | null
+          city?: string | null
           id?: string | null
           logo_url?: string | null
           name?: string | null
           primary_color?: string | null
           slug?: string | null
+          state?: string | null
           supabase_anon_key?: string | null
           supabase_url?: string | null
         }
