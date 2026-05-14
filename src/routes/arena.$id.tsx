@@ -339,7 +339,7 @@ function PlayerWithControls({
           </div>
           <button
             onClick={onEdit}
-            style={{ backgroundColor: "#FFD700", color: "#000" }}
+            style={{ backgroundColor: brand, color: "#fff" }}
             className="flex items-center gap-1 rounded-full px-4 py-2 text-sm font-extrabold shadow-lg transition active:scale-95"
           >
             <Scissors className="h-4 w-4" /> Editar
