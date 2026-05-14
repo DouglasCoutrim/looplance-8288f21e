@@ -40,7 +40,7 @@ function ArenaPanel() {
       supabase.from("courts").select("*").eq("arena_id", adminArenaId).order("name"),
       supabase.from("videos").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }),
     ]);
-    if (a) { setArena(a as Arena); setArenaName(a.name); }
+    if (a) { setArena(a as Arena); setArenaName(a.name); setArenaCity((a as Arena).city ?? ""); setArenaState((a as Arena).state ?? ""); }
     setCourts((c ?? []) as Court[]);
     setVideos((v ?? []) as Video[]);
   }
