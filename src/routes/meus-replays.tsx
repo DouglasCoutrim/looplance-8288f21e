@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Loader2, Scissors, Download, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { BottomNav } from "@/components/BottomNav";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -60,7 +61,8 @@ function MyReplays() {
   }, [user, authLoading, navigate]);
 
   return (
-    <div className="min-h-screen bg-background pb-12">
+    <div className="min-h-screen bg-background pb-24">
+      <BottomNav />
       <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
           <button onClick={() => navigate({ to: "/" })} className="rounded-md p-1 hover:bg-accent">

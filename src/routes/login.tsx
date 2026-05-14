@@ -22,7 +22,7 @@ function LoginPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Bem-vindo de volta!");
-    navigate({ to: "/app" });
+    navigate({ to: "/" });
   }
 
   return (

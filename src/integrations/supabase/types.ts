@@ -357,16 +357,19 @@ export type Database = {
         Row: {
           arena_id: string
           aspect_ratio: string
+          coords_json: Json | null
           created_at: string
           crop_h: number
           crop_w: number
           crop_x: number
           crop_y: number
           duracao_segundos: number
+          end_time: number | null
           id: string
           output_url: string | null
           source_video_id: string | null
           source_video_url: string | null
+          start_time: number | null
           status: string
           thumbnail_url: string | null
           timestamp_inicio: number
@@ -376,16 +379,19 @@ export type Database = {
         Insert: {
           arena_id: string
           aspect_ratio?: string
+          coords_json?: Json | null
           created_at?: string
           crop_h?: number
           crop_w?: number
           crop_x?: number
           crop_y?: number
           duracao_segundos?: number
+          end_time?: number | null
           id?: string
           output_url?: string | null
           source_video_id?: string | null
           source_video_url?: string | null
+          start_time?: number | null
           status?: string
           thumbnail_url?: string | null
           timestamp_inicio?: number
@@ -395,16 +401,19 @@ export type Database = {
         Update: {
           arena_id?: string
           aspect_ratio?: string
+          coords_json?: Json | null
           created_at?: string
           crop_h?: number
           crop_w?: number
           crop_x?: number
           crop_y?: number
           duracao_segundos?: number
+          end_time?: number | null
           id?: string
           output_url?: string | null
           source_video_id?: string | null
           source_video_url?: string | null
+          start_time?: number | null
           status?: string
           thumbnail_url?: string | null
           timestamp_inicio?: number

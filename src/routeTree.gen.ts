@@ -10,21 +10,31 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ReplaysRouteImport } from './routes/replays'
+import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as MeusReplaysRouteImport } from './routes/meus-replays'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ArenaRouteImport } from './routes/arena'
-import { Route as AppRouteImport } from './routes/app'
+import { Route as AoVivoRouteImport } from './routes/ao-vivo'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AcessoNegadoRouteImport } from './routes/acesso-negado'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as PlaySlugRouteImport } from './routes/play.$slug'
 import { Route as ArenaIdRouteImport } from './routes/arena.$id'
-import { Route as ASlugRouteImport } from './routes/a.$slug'
 import { Route as AdminArenaIdRouteImport } from './routes/admin.arena.$id'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReplaysRoute = ReplaysRouteImport.update({
+  id: '/replays',
+  path: '/replays',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MeusReplaysRoute = MeusReplaysRouteImport.update({
@@ -42,9 +52,9 @@ const ArenaRoute = ArenaRouteImport.update({
   path: '/arena',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
-  id: '/app',
-  path: '/app',
+const AoVivoRoute = AoVivoRouteImport.update({
+  id: '/ao-vivo',
+  path: '/ao-vivo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -62,20 +72,10 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PlaySlugRoute = PlaySlugRouteImport.update({
-  id: '/play/$slug',
-  path: '/play/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ArenaIdRoute = ArenaIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ArenaRoute,
-} as any)
-const ASlugRoute = ASlugRouteImport.update({
-  id: '/a/$slug',
-  path: '/a/$slug',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminArenaIdRoute = AdminArenaIdRouteImport.update({
   id: '/arena/$id',
@@ -87,28 +87,28 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/acesso-negado': typeof AcessoNegadoRoute
   '/admin': typeof AdminRouteWithChildren
-  '/app': typeof AppRoute
+  '/ao-vivo': typeof AoVivoRoute
   '/arena': typeof ArenaRouteWithChildren
   '/login': typeof LoginRoute
   '/meus-replays': typeof MeusReplaysRoute
+  '/perfil': typeof PerfilRoute
+  '/replays': typeof ReplaysRoute
   '/signup': typeof SignupRoute
-  '/a/$slug': typeof ASlugRoute
   '/arena/$id': typeof ArenaIdRoute
-  '/play/$slug': typeof PlaySlugRoute
   '/admin/arena/$id': typeof AdminArenaIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/acesso-negado': typeof AcessoNegadoRoute
   '/admin': typeof AdminRouteWithChildren
-  '/app': typeof AppRoute
+  '/ao-vivo': typeof AoVivoRoute
   '/arena': typeof ArenaRouteWithChildren
   '/login': typeof LoginRoute
   '/meus-replays': typeof MeusReplaysRoute
+  '/perfil': typeof PerfilRoute
+  '/replays': typeof ReplaysRoute
   '/signup': typeof SignupRoute
-  '/a/$slug': typeof ASlugRoute
   '/arena/$id': typeof ArenaIdRoute
-  '/play/$slug': typeof PlaySlugRoute
   '/admin/arena/$id': typeof AdminArenaIdRoute
 }
 export interface FileRoutesById {
@@ -116,14 +116,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/acesso-negado': typeof AcessoNegadoRoute
   '/admin': typeof AdminRouteWithChildren
-  '/app': typeof AppRoute
+  '/ao-vivo': typeof AoVivoRoute
   '/arena': typeof ArenaRouteWithChildren
   '/login': typeof LoginRoute
   '/meus-replays': typeof MeusReplaysRoute
+  '/perfil': typeof PerfilRoute
+  '/replays': typeof ReplaysRoute
   '/signup': typeof SignupRoute
-  '/a/$slug': typeof ASlugRoute
   '/arena/$id': typeof ArenaIdRoute
-  '/play/$slug': typeof PlaySlugRoute
   '/admin/arena/$id': typeof AdminArenaIdRoute
 }
 export interface FileRouteTypes {
@@ -132,42 +132,42 @@ export interface FileRouteTypes {
     | '/'
     | '/acesso-negado'
     | '/admin'
-    | '/app'
+    | '/ao-vivo'
     | '/arena'
     | '/login'
     | '/meus-replays'
+    | '/perfil'
+    | '/replays'
     | '/signup'
-    | '/a/$slug'
     | '/arena/$id'
-    | '/play/$slug'
     | '/admin/arena/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/acesso-negado'
     | '/admin'
-    | '/app'
+    | '/ao-vivo'
     | '/arena'
     | '/login'
     | '/meus-replays'
+    | '/perfil'
+    | '/replays'
     | '/signup'
-    | '/a/$slug'
     | '/arena/$id'
-    | '/play/$slug'
     | '/admin/arena/$id'
   id:
     | '__root__'
     | '/'
     | '/acesso-negado'
     | '/admin'
-    | '/app'
+    | '/ao-vivo'
     | '/arena'
     | '/login'
     | '/meus-replays'
+    | '/perfil'
+    | '/replays'
     | '/signup'
-    | '/a/$slug'
     | '/arena/$id'
-    | '/play/$slug'
     | '/admin/arena/$id'
   fileRoutesById: FileRoutesById
 }
@@ -175,13 +175,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AcessoNegadoRoute: typeof AcessoNegadoRoute
   AdminRoute: typeof AdminRouteWithChildren
-  AppRoute: typeof AppRoute
+  AoVivoRoute: typeof AoVivoRoute
   ArenaRoute: typeof ArenaRouteWithChildren
   LoginRoute: typeof LoginRoute
   MeusReplaysRoute: typeof MeusReplaysRoute
+  PerfilRoute: typeof PerfilRoute
+  ReplaysRoute: typeof ReplaysRoute
   SignupRoute: typeof SignupRoute
-  ASlugRoute: typeof ASlugRoute
-  PlaySlugRoute: typeof PlaySlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -191,6 +191,20 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/replays': {
+      id: '/replays'
+      path: '/replays'
+      fullPath: '/replays'
+      preLoaderRoute: typeof ReplaysRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/meus-replays': {
@@ -214,11 +228,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArenaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app': {
-      id: '/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AppRouteImport
+    '/ao-vivo': {
+      id: '/ao-vivo'
+      path: '/ao-vivo'
+      fullPath: '/ao-vivo'
+      preLoaderRoute: typeof AoVivoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -242,26 +256,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/play/$slug': {
-      id: '/play/$slug'
-      path: '/play/$slug'
-      fullPath: '/play/$slug'
-      preLoaderRoute: typeof PlaySlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/arena/$id': {
       id: '/arena/$id'
       path: '/$id'
       fullPath: '/arena/$id'
       preLoaderRoute: typeof ArenaIdRouteImport
       parentRoute: typeof ArenaRoute
-    }
-    '/a/$slug': {
-      id: '/a/$slug'
-      path: '/a/$slug'
-      fullPath: '/a/$slug'
-      preLoaderRoute: typeof ASlugRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/admin/arena/$id': {
       id: '/admin/arena/$id'
@@ -297,13 +297,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AcessoNegadoRoute: AcessoNegadoRoute,
   AdminRoute: AdminRouteWithChildren,
-  AppRoute: AppRoute,
+  AoVivoRoute: AoVivoRoute,
   ArenaRoute: ArenaRouteWithChildren,
   LoginRoute: LoginRoute,
   MeusReplaysRoute: MeusReplaysRoute,
+  PerfilRoute: PerfilRoute,
+  ReplaysRoute: ReplaysRoute,
   SignupRoute: SignupRoute,
-  ASlugRoute: ASlugRoute,
-  PlaySlugRoute: PlaySlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -16,7 +16,7 @@ function Denied() {
         ou entre com uma conta autorizada.
       </p>
       <div className="mt-6 flex gap-2">
-        <Button asChild><Link to="/app">Meus replays</Link></Button>
+        <Button asChild><Link to="/">Início</Link></Button>
         <Button asChild variant="outline"><Link to="/login">Trocar de conta</Link></Button>
       </div>
     </div>

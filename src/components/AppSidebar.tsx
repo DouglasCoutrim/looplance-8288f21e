@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Building2, LayoutDashboard, LogOut, PlayCircle, Settings2 } from "lucide-react";
+import { Building2, LayoutDashboard, LogOut, PlayCircle } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -48,12 +48,8 @@ export function AppSidebar() {
   if (adminArenaId) {
     items.push({ title: "Painel da Arena", url: "/arena", icon: LayoutDashboard });
   }
-  if (playerSlug) {
-    items.push({ title: "Meus replays", url: `/a/${playerSlug}`, icon: PlayCircle });
-  }
-  if (!isSuperAdmin && !adminArenaId && playerArenaIds.length === 0) {
-    items.push({ title: "Início", url: "/app", icon: Settings2 });
-  }
+  items.push({ title: "Início", url: "/", icon: PlayCircle });
+  void playerSlug;
 
   return (
     <Sidebar collapsible="icon">

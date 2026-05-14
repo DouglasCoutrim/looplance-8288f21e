@@ -23,14 +23,14 @@ function SignupPage() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/app`,
+        emailRedirectTo: `${window.location.origin}/`,
         data: { full_name: name },
       },
     });
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Conta criada! Bem-vindo ao LoopLance.");
-    navigate({ to: "/app" });
+    navigate({ to: "/" });
   }
 
   return (
