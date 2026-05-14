@@ -159,6 +159,16 @@ function ArenaPanel() {
                   <Label>Nome da arena</Label>
                   <Input value={arenaName} onChange={(e) => setArenaName(e.target.value)} />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Cidade</Label>
+                    <Input value={arenaCity} onChange={(e) => setArenaCity(e.target.value)} placeholder="Ex.: Cristalina" />
+                  </div>
+                  <div>
+                    <Label>Estado (UF)</Label>
+                    <Input value={arenaState} onChange={(e) => setArenaState(e.target.value)} placeholder="Ex.: GO" maxLength={2} />
+                  </div>
+                </div>
                 <div>
                   <Label>Slug (URL pública)</Label>
                   <Input value={arena.slug} disabled />
