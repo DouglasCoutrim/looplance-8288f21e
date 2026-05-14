@@ -13,6 +13,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { resolveReplayUrl } from "@/lib/replays";
 
 export const Route = createFileRoute("/arena/$id")({
   component: ArenaDashboard,
@@ -282,6 +283,16 @@ function PlayerWithControls({
 }: { selected: Replay | null; brand: string; onEdit: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !selected) return;
+    const url = resolveReplayUrl(selected.video_url);
+    if (v.src !== url) {
+      v.src = url;
+      v.load();
+    }
+  }, [selected]);
+
   function nudge(delta: number) {
     const v = videoRef.current;
     if (!v) return;
@@ -292,13 +303,11 @@ function PlayerWithControls({
     <div className="overflow-hidden rounded-2xl border border-border bg-black">
       {selected ? (
         <video
-          key={selected.id}
           ref={videoRef}
-          src={selected.video_url}
           controls
           playsInline
           className="aspect-video w-full bg-black"
-          poster={selected.thumbnail_url ?? undefined}
+          poster={selected.thumbnail_url ? resolveReplayUrl(selected.thumbnail_url) : undefined}
         />
       ) : (
         <div className="aspect-video w-full grid place-items-center text-white/60">
