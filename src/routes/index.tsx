@@ -83,13 +83,17 @@ function Home() {
     return Array.from(c).sort();
   }, [arenas, filterState]);
 
+  const norm = (s: string) =>
+    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
   const filteredArenas = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = norm(search);
     return arenas.filter((a) => {
       if (filterState !== "all" && a.state !== filterState) return false;
       if (filterCity !== "all" && a.city !== filterCity) return false;
-      if (q && !a.name.toLowerCase().includes(q) && !(a.city ?? "").toLowerCase().includes(q)) return false;
-      return true;
+      if (!q) return true;
+      const hay = norm([a.name, a.city, a.state].filter(Boolean).join(" "));
+      return hay.includes(q);
     });
   }, [arenas, search, filterState, filterCity]);
 
