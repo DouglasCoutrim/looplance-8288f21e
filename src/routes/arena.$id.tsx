@@ -189,18 +189,7 @@ function ArenaDashboard() {
         )}
 
         <section className="pt-4">
-          <div className="overflow-hidden rounded-2xl border border-border bg-black">
-            {selected ? (
-              <video key={selected.id} src={selected.video_url} controls playsInline className="aspect-video w-full bg-black" poster={selected.thumbnail_url ?? undefined} />
-            ) : (
-              <div className="aspect-video w-full grid place-items-center text-white/60">
-                <div className="text-center">
-                  <PlayCircle className="mx-auto mb-2 h-12 w-12 opacity-40" />
-                  <p className="text-sm">Selecione um replay abaixo</p>
-                </div>
-              </div>
-            )}
-          </div>
+          <PlayerWithControls selected={selected} brand={brand} onEdit={() => selected && setEditing(selected)} />
           {selected && (
             <div className="mt-3 flex items-center justify-between">
               <div className="text-sm">
@@ -211,12 +200,39 @@ function ArenaDashboard() {
                   {format(new Date(selected.data_evento), "dd 'de' MMMM", { locale: ptBR })}
                 </p>
               </div>
-              <Button size="sm" onClick={() => setEditing(selected)} style={{ backgroundColor: brand }} className="text-white">
-                <Scissors className="mr-1 h-4 w-4" /> Gerar Replay
-              </Button>
             </div>
           )}
         </section>
+
+        {/* Quadras Disponíveis */}
+        {quadras.length > 0 && (
+          <section className="mt-6">
+            <h2 className="mb-3 text-sm font-extrabold uppercase tracking-wider">Quadras Disponíveis</h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {quadras.map((q) => {
+                const items = replays.filter((r) => r.quadra_id === q.id);
+                return (
+                  <button
+                    key={q.id}
+                    onClick={() => items[0] && setSelected(items[0])}
+                    className="group relative overflow-hidden rounded-xl border border-border bg-card text-left transition hover:border-primary/60"
+                  >
+                    <div className="relative aspect-square w-full"
+                      style={{ background: `linear-gradient(135deg, ${brand}33, #000 70%)` }}>
+                      {arena.logo_url && (
+                        <img src={arena.logo_url} alt="" className="absolute inset-0 m-auto h-12 w-12 object-contain opacity-40" />
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-2">
+                        <p className="truncate text-sm font-bold text-white">{q.nome}</p>
+                        <p className="text-[10px] text-white/60">{items.length} lance(s)</p>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         <section className="mt-6">
           <Tabs defaultValue="recent">
@@ -264,13 +280,7 @@ function ArenaDashboard() {
         </section>
       </main>
 
-      <button
-        onClick={checkIn}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white shadow-2xl transition active:scale-95"
-        style={{ backgroundColor: checkinDone ? "#10b981" : brand }}
-      >
-        {checkinDone ? <><CheckCircle2 className="h-5 w-5" /> Check-in!</> : <><MapPin className="h-5 w-5" /> Check-in</>}
-      </button>
+      <BottomNav />
 
       {editing && (
         <ReplayEditor
@@ -280,6 +290,71 @@ function ArenaDashboard() {
           user={user}
           onClose={() => setEditing(null)}
         />
+      )}
+    </div>
+  );
+}
+
+function PlayerWithControls({
+  selected, brand, onEdit,
+}: { selected: Replay | null; brand: string; onEdit: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  function nudge(delta: number) {
+    const v = videoRef.current;
+    if (!v) return;
+    v.currentTime = Math.max(0, Math.min((v.duration || 1e9), v.currentTime + delta));
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-black">
+      {selected ? (
+        <video
+          key={selected.id}
+          ref={videoRef}
+          src={selected.video_url}
+          controls
+          playsInline
+          className="aspect-video w-full bg-black"
+          poster={selected.thumbnail_url ?? undefined}
+        />
+      ) : (
+        <div className="aspect-video w-full grid place-items-center text-white/60">
+          <div className="text-center">
+            <PlayCircle className="mx-auto mb-2 h-12 w-12 opacity-40" />
+            <p className="text-sm">Selecione um replay abaixo</p>
+          </div>
+        </div>
+      )}
+      {selected && (
+        <div className="flex items-center justify-between gap-2 border-t border-white/10 bg-black p-2">
+          <div className="flex gap-2">
+            <button
+              onClick={() => nudge(-5)}
+              className="grid h-10 w-10 place-items-center rounded-full border border-white/20 text-white transition hover:bg-white/10"
+              aria-label="Voltar 5 segundos"
+            >
+              <RotateCcw className="h-4 w-4" />
+              <span className="sr-only">-5s</span>
+            </button>
+            <span className="grid place-items-center text-[10px] font-bold text-white/60">-5s</span>
+            <span className="grid place-items-center text-[10px] font-bold text-white/60">+15s</span>
+            <button
+              onClick={() => nudge(15)}
+              className="grid h-10 w-10 place-items-center rounded-full border border-white/20 text-white transition hover:bg-white/10"
+              aria-label="Avançar 15 segundos"
+            >
+              <RotateCw className="h-4 w-4" />
+            </button>
+          </div>
+          <button
+            onClick={onEdit}
+            style={{ backgroundColor: "#FFD700", color: "#000" }}
+            className="flex items-center gap-1 rounded-full px-4 py-2 text-sm font-extrabold shadow-lg transition active:scale-95"
+          >
+            <Scissors className="h-4 w-4" /> Editar
+          </button>
+        </div>
       )}
     </div>
   );
