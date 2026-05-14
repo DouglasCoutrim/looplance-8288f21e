@@ -55,7 +55,7 @@ function PerfilPage() {
             <Row icon={Film} label="Meus replays" onClick={() => navigate({ to: "/meus-replays" })} />
             {(isSuperAdmin || adminArenaId) && (
               <Row icon={Shield} label="Painel administrativo"
-                onClick={() => navigate({ to: isSuperAdmin ? "/admin" : "/arena" })} />
+                onClick={() => navigate({ to: isSuperAdmin ? "/admin" : "/painel" })} />
             )}
             <Row icon={Settings} label="Configurações" onClick={() => {}} disabled />
             <Row icon={HelpCircle} label="Ajuda" onClick={() => {}} disabled />

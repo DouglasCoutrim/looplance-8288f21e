@@ -46,7 +46,7 @@ export function AppSidebar() {
     items.push({ title: "Arenas", url: "/admin", icon: Building2 });
   }
   if (adminArenaId) {
-    items.push({ title: "Painel da Arena", url: "/arena", icon: LayoutDashboard });
+    items.push({ title: "Painel da Arena", url: "/painel", icon: LayoutDashboard });
   }
   items.push({ title: "Início", url: "/", icon: PlayCircle });
   void playerSlug;
