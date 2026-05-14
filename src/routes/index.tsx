@@ -161,7 +161,6 @@ function Home() {
 
         <section className="mt-4">
           <div className="space-y-2">
-          <div className="mt-5 space-y-2">
             {loading ? (
               <div className="grid place-items-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
             ) : filteredArenas.length === 0 ? (
