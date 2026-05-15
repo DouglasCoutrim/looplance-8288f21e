@@ -34,6 +34,15 @@ function SignupPage() {
     navigate({ to: "/" });
   }
 
+  async function handleGoogle() {
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) return toast.error(result.error.message ?? "Falha ao entrar com Google");
+    if (result.redirected) return;
+    navigate({ to: "/" });
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-hero p-4">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-glow">
