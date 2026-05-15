@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Cable, Camera as CameraIcon, Cpu, Loader2, Trash2, Wifi, WifiOff } from "lucide-react";
+import { ArrowLeft, Cable, Camera as CameraIcon, Cpu, Loader2, Trash2, Wifi, WifiOff, Clock } from "lucide-react";
 
 export const Route = createFileRoute("/admin/infra")({ component: GlobalInfraPage });
 
