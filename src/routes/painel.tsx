@@ -265,7 +265,6 @@ function ArenaPanel() {
                 </Card>
               );
             })}
-            ))}
             {courts.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma quadra cadastrada.</p>}
           </div>
         </TabsContent>
