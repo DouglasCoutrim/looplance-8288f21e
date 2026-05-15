@@ -8,6 +8,8 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
+import { RoleSimulatorProvider } from "@/contexts/role-simulator";
+import { RoleSimulatorBar } from "@/components/RoleSimulatorBar";
 
 import appCss from "../styles.css?url";
 
@@ -117,8 +119,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <Toaster richColors theme="dark" position="top-center" />
+      <RoleSimulatorProvider>
+        <RoleSimulatorBar />
+        <Outlet />
+        <Toaster richColors theme="dark" position="top-center" />
+      </RoleSimulatorProvider>
     </QueryClientProvider>
   );
 }
