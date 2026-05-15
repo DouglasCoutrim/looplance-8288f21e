@@ -9,14 +9,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Download, Loader2, Trash2, Upload } from "lucide-react";
+import { Camera, Download, Loader2, Trash2, Upload } from "lucide-react";
 
 export const Route = createFileRoute("/painel")({ component: ArenaPanel });
 
 interface Arena { id: string; name: string; slug: string; logo_url: string | null; primary_color: string; city: string | null; state: string | null; }
 interface Court { id: string; name: string; qr_token: string; }
 interface Video { id: string; title: string; video_url: string; court_id: string | null; created_at: string; }
+interface CameraRow { id: string; name: string; }
+interface CourtCameraRow { id: string; court_id: string; camera_id: string; }
 
 function ArenaPanel() {
   const { user, loading, adminArenaId } = useAuth();
