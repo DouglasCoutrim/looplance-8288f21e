@@ -24,6 +24,7 @@ function LoginPage() {
     if (error) return toast.error(error.message);
     toast.success("Bem-vindo de volta!");
     navigate({ to: "/" });
+  }
 
   async function handleGoogle() {
     const result = await lovable.auth.signInWithOAuth("google", {
