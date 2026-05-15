@@ -22,6 +22,8 @@ interface Arena {
   primary_color: string;
   city: string | null;
   state: string | null;
+  supabase_url: string | null;
+  supabase_anon_key: string | null;
 }
 interface Sponsor { id: string; name: string; logo_url: string; link_url: string | null; display_order: number }
 interface CamRow { id: string; name: string; rtsp_url: string; button_id: string | null }
