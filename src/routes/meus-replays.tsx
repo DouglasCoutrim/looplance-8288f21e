@@ -5,8 +5,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, Scissors, Download, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, Loader2, Scissors, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
+import { VideoActions } from "@/components/VideoActions";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -117,9 +118,11 @@ function JobCard({ job, arena }: { job: Job; arena?: ArenaInfo }) {
           Início em {fmt(job.timestamp_inicio)} · {format(new Date(job.created_at), "dd MMM, HH:mm", { locale: ptBR })}
         </p>
         {job.output_url && (
-          <a href={job.output_url} target="_blank" rel="noopener noreferrer" className="mt-2 block">
-            <Button size="sm" className="w-full"><Download className="mr-1 h-3.5 w-3.5" /> Baixar</Button>
-          </a>
+          <VideoActions
+            url={job.output_url}
+            title={`Replay ${arena?.name ?? "LoopLance"}`}
+            className="mt-2"
+          />
         )}
       </div>
     </Card>

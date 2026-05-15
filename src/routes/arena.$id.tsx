@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { resolveReplayUrl } from "@/lib/replays";
+import { VideoActions } from "@/components/VideoActions";
 
 export const Route = createFileRoute("/arena/$id")({
   component: ArenaDashboard,
@@ -345,6 +346,11 @@ function PlayerWithControls({
           >
             <Scissors className="h-4 w-4" /> Editar
           </button>
+        </div>
+      )}
+      {selected && (
+        <div className="border-t border-white/10 bg-black p-2">
+          <VideoActions url={resolveReplayUrl(selected.video_url)} title="Replay LoopLance" />
         </div>
       )}
     </div>
