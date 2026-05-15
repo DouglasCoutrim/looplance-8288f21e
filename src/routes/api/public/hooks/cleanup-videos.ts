@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { runCleanupRoutine } from "@/lib/arena-admin.functions";
+import { runCleanupRoutine } from "@/lib/cleanup.server";
 
 export const Route = createFileRoute("/api/public/hooks/cleanup-videos")({
   server: {
