@@ -419,3 +419,117 @@ function MappingGlobal({ arenas, boards, buttons, cameras, onChange }:
     </div>
   );
 }
+
+/* ----------------------------- Retenção de vídeos ----------------------------- */
+
+function RetentionCard() {
+  const [days, setDays] = useState<string>("30");
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [lastResult, setLastResult] = useState<any>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { getRetentionSettings } = await import("@/lib/arena-admin.functions");
+        const r = await getRetentionSettings();
+        setDays(String(r.default_retention_days));
+      } catch (e: any) {
+        toast.error(e?.message ?? "Falha ao carregar");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  async function save() {
+    const n = parseInt(days, 10);
+    if (!Number.isFinite(n) || n < 1) return toast.error("Informe um número válido de dias");
+    setBusy(true);
+    try {
+      const { updateRetentionSettings } = await import("@/lib/arena-admin.functions");
+      await updateRetentionSettings({ data: { default_retention_days: n } });
+      toast.success("Configuração salva");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao salvar");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function runNow() {
+    if (!confirm("Executar limpeza agora? Vídeos antigos das arenas configuradas serão apagados.")) return;
+    setRunning(true);
+    setLastResult(null);
+    try {
+      const { runCleanupNow } = await import("@/lib/arena-admin.functions");
+      const res = await runCleanupNow();
+      setLastResult(res);
+      toast.success("Limpeza executada");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao executar");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  if (loading) return <Card className="p-6"><Loader2 className="h-5 w-5 animate-spin text-primary" /></Card>;
+
+  return (
+    <div className="space-y-6">
+      <Card className="p-6">
+        <h2 className="mb-1 text-lg font-semibold">Retenção padrão</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Quantidade de dias que vídeos ficam armazenados. Cada arena pode sobrescrever esse valor
+          em <strong>Arena → Conexão</strong>. Limpeza roda diariamente às 03:00 (UTC).
+        </p>
+        <div className="flex items-end gap-3">
+          <div>
+            <Label>Dias</Label>
+            <Input type="number" min={1} max={3650} value={days} onChange={(e) => setDays(e.target.value)} className="w-32" />
+          </div>
+          <Button onClick={save} disabled={busy}>{busy ? "Salvando..." : "Salvar"}</Button>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <h3 className="mb-1 text-base font-semibold">Executar limpeza agora</h3>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Roda imediatamente o processo de retenção em todas as arenas com Supabase próprio configurado
+          (URL + service key).
+        </p>
+        <Button onClick={runNow} disabled={running} variant="outline">
+          {running ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Executando...</> : "Rodar agora"}
+        </Button>
+
+        {lastResult && (
+          <div className="mt-4 space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Padrão usado: <strong>{lastResult.default_days} dias</strong>
+            </p>
+            <div className="overflow-hidden rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+                  <tr><th className="p-3">Arena</th><th className="p-3">Apagados</th><th className="p-3">Erro</th></tr>
+                </thead>
+                <tbody>
+                  {(lastResult.processed ?? []).map((p: any, i: number) => (
+                    <tr key={i} className="border-t border-border">
+                      <td className="p-3 font-medium">{p.arena}</td>
+                      <td className="p-3">{p.deleted}</td>
+                      <td className="p-3 text-xs text-destructive">{p.error ?? "—"}</td>
+                    </tr>
+                  ))}
+                  {(lastResult.processed ?? []).length === 0 && (
+                    <tr><td colSpan={3} className="p-6 text-center text-muted-foreground">Nenhuma arena com Supabase próprio configurado.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
