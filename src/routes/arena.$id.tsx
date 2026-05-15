@@ -28,6 +28,7 @@ interface PublicArena {
   id: string; slug: string; name: string;
   logo_url: string | null; primary_color: string;
   city: string | null; state: string | null;
+  supabase_url: string | null; supabase_anon_key: string | null;
 }
 interface Quadra { id: string; nome: string }
 interface Replay {
