@@ -26,16 +26,13 @@ export const updateArenaConnection = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ConnSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertSuper(context.supabase, context.userId);
-    const update: Record<string, unknown> = {
+    const update = {
       supabase_url: data.supabase_url,
       supabase_anon_key: data.supabase_anon_key,
       videos_bucket: data.videos_bucket,
       retention_days: data.retention_days,
+      ...(data.supabase_service_key ? { supabase_service_key: data.supabase_service_key } : {}),
     };
-    // Only update service key when explicitly provided (avoid wiping it on edits)
-    if (data.supabase_service_key !== undefined && data.supabase_service_key !== null && data.supabase_service_key !== "") {
-      update.supabase_service_key = data.supabase_service_key;
-    }
     const { error } = await supabaseAdmin.from("arenas").update(update).eq("id", data.arenaId);
     if (error) throw new Error(error.message);
     return { ok: true };
