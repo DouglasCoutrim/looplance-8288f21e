@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Camera, Download, Loader2, Trash2, Upload } from "lucide-react";
+import { VideoActions } from "@/components/VideoActions";
 
 export const Route = createFileRoute("/painel")({ component: ArenaPanel });
 
