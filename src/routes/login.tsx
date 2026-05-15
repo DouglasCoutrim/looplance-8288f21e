@@ -24,6 +24,15 @@ function LoginPage() {
     if (error) return toast.error(error.message);
     toast.success("Bem-vindo de volta!");
     navigate({ to: "/" });
+
+  async function handleGoogle() {
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) return toast.error(result.error.message ?? "Falha ao entrar com Google");
+    if (result.redirected) return;
+    toast.success("Bem-vindo!");
+    navigate({ to: "/" });
   }
 
   return (
