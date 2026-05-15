@@ -127,6 +127,7 @@ function AdminPage() {
       <Tabs defaultValue="arenas">
         <TabsList className="mb-4">
           <TabsTrigger value="arenas">Arenas</TabsTrigger>
+          <TabsTrigger value="donos">Donos de Arena</TabsTrigger>
           <TabsTrigger value="usuarios">Usuários globais</TabsTrigger>
         </TabsList>
 
