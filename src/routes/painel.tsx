@@ -26,6 +26,8 @@ function ArenaPanel() {
   const [arena, setArena] = useState<Arena | null>(null);
   const [courts, setCourts] = useState<Court[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
+  const [cameras, setCameras] = useState<CameraRow[]>([]);
+  const [courtCameras, setCourtCameras] = useState<CourtCameraRow[]>([]);
   const [newCourt, setNewCourt] = useState("");
   const [arenaName, setArenaName] = useState("");
   const [arenaCity, setArenaCity] = useState("");
@@ -38,14 +40,18 @@ function ArenaPanel() {
 
   async function load() {
     if (!adminArenaId) return;
-    const [{ data: a }, { data: c }, { data: v }] = await Promise.all([
+    const [{ data: a }, { data: c }, { data: v }, { data: cams }, { data: cc }] = await Promise.all([
       supabase.from("arenas").select("*").eq("id", adminArenaId).maybeSingle(),
       supabase.from("courts").select("*").eq("arena_id", adminArenaId).order("name"),
       supabase.from("videos").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }),
+      supabase.from("cameras").select("id,name").eq("arena_id", adminArenaId).order("name"),
+      supabase.from("court_cameras").select("id,court_id,camera_id").eq("arena_id", adminArenaId),
     ]);
     if (a) { setArena(a as Arena); setArenaName(a.name); setArenaCity((a as Arena).city ?? ""); setArenaState((a as Arena).state ?? ""); }
     setCourts((c ?? []) as Court[]);
     setVideos((v ?? []) as Video[]);
+    setCameras((cams ?? []) as CameraRow[]);
+    setCourtCameras((cc ?? []) as CourtCameraRow[]);
   }
   useEffect(() => { load(); }, [adminArenaId]);
 
