@@ -79,14 +79,20 @@ export const inviteArenaOwner = createServerFn({ method: "POST" })
       .from("profiles")
       .upsert({ id: targetUserId, full_name: data.fullName ?? data.email }, { onConflict: "id" });
 
-    // Assign admin_arena role for this arena (idempotent)
-    const { error: roleInsErr } = await supabaseAdmin
+    // Assign admin_arena role for this arena (idempotent — check first)
+    const { data: existingRole } = await supabaseAdmin
       .from("user_roles")
-      .upsert(
-        { user_id: targetUserId, role: "admin_arena", arena_id: data.arenaId },
-        { onConflict: "user_id,role,arena_id", ignoreDuplicates: true },
-      );
-    if (roleInsErr) throw new Error(roleInsErr.message);
+      .select("id")
+      .eq("user_id", targetUserId)
+      .eq("role", "admin_arena")
+      .eq("arena_id", data.arenaId)
+      .maybeSingle();
+    if (!existingRole) {
+      const { error: roleInsErr } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: targetUserId, role: "admin_arena", arena_id: data.arenaId });
+      if (roleInsErr) throw new Error(roleInsErr.message);
+    }
 
     // Set arena.owner_id
     await supabaseAdmin.from("arenas").update({ owner_id: targetUserId }).eq("id", data.arenaId);
