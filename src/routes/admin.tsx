@@ -1,7 +1,9 @@
 import { createFileRoute, Link, Navigate, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { inviteArenaOwner } from "@/lib/admin.functions";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +16,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Building2, Loader2, Trash2, Users, Video } from "lucide-react";
+import { Building2, Loader2, Mail, Trash2, Users, Video } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({ component: AdminPage });
 
@@ -125,6 +127,7 @@ function AdminPage() {
       <Tabs defaultValue="arenas">
         <TabsList className="mb-4">
           <TabsTrigger value="arenas">Arenas</TabsTrigger>
+          <TabsTrigger value="donos">Donos de Arena</TabsTrigger>
           <TabsTrigger value="usuarios">Usuários globais</TabsTrigger>
         </TabsList>
 
@@ -211,11 +214,85 @@ function AdminPage() {
           </div>
         </TabsContent>
 
+        <TabsContent value="donos">
+          <InviteOwnerCard arenas={arenas} onChange={load} />
+        </TabsContent>
+
         <TabsContent value="usuarios">
           <GlobalUsersCard users={globalUsers} arenas={arenas} onChange={load} />
         </TabsContent>
       </Tabs>
     </AppShell>
+  );
+}
+
+function InviteOwnerCard({ arenas, onChange }: { arenas: ArenaRow[]; onChange: () => void }) {
+  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [arenaId, setArenaId] = useState("");
+  const [busy, setBusy] = useState(false);
+  const invite = useServerFn(inviteArenaOwner);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!arenaId) return toast.error("Selecione uma arena");
+    if (!email.trim()) return toast.error("Informe o e-mail");
+    setBusy(true);
+    try {
+      const res = await invite({ data: { email: email.trim(), arenaId, fullName: fullName.trim() || undefined } });
+      toast.success(
+        res.invited
+          ? `Convite enviado para ${email}. Vinculado como dono de "${res.arenaName}".`
+          : `Usuário existente vinculado como dono de "${res.arenaName}".`,
+      );
+      setEmail(""); setFullName(""); setArenaId("");
+      onChange();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Falha ao convidar");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="max-w-2xl p-6">
+      <h2 className="mb-1 text-lg font-semibold">Cadastrar Dono de Arena</h2>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Envie um convite por e-mail. O usuário define a senha ao acessar o link e já entra como
+        admin da arena selecionada.
+      </p>
+      <form onSubmit={submit} className="space-y-4">
+        <div>
+          <Label>E-mail do dono</Label>
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="dono@arena.com.br"
+            required
+          />
+        </div>
+        <div>
+          <Label>Nome completo (opcional)</Label>
+          <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="João Silva" />
+        </div>
+        <div>
+          <Label>Arena vinculada</Label>
+          <Select value={arenaId} onValueChange={setArenaId}>
+            <SelectTrigger><SelectValue placeholder="Selecione uma arena..." /></SelectTrigger>
+            <SelectContent>
+              {arenas.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {arenas.length === 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">Crie uma arena primeiro na aba "Arenas".</p>
+          )}
+        </div>
+        <Button type="submit" className="w-full" disabled={busy || !arenaId}>
+          {busy ? "Enviando..." : <><Mail className="mr-2 h-4 w-4" /> Enviar convite</>}
+        </Button>
+      </form>
+    </Card>
   );
 }
 

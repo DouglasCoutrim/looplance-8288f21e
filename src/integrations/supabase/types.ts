@@ -218,6 +218,30 @@ export type Database = {
           },
         ]
       }
+      court_cameras: {
+        Row: {
+          arena_id: string
+          camera_id: string
+          court_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          arena_id: string
+          camera_id: string
+          court_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          arena_id?: string
+          camera_id?: string
+          court_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       courts: {
         Row: {
           arena_id: string

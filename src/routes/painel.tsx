@@ -9,20 +9,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Download, Loader2, Trash2, Upload } from "lucide-react";
+import { Camera, Download, Loader2, Trash2, Upload } from "lucide-react";
 
 export const Route = createFileRoute("/painel")({ component: ArenaPanel });
 
 interface Arena { id: string; name: string; slug: string; logo_url: string | null; primary_color: string; city: string | null; state: string | null; }
 interface Court { id: string; name: string; qr_token: string; }
 interface Video { id: string; title: string; video_url: string; court_id: string | null; created_at: string; }
+interface CameraRow { id: string; name: string; }
+interface CourtCameraRow { id: string; court_id: string; camera_id: string; }
 
 function ArenaPanel() {
   const { user, loading, adminArenaId } = useAuth();
   const [arena, setArena] = useState<Arena | null>(null);
   const [courts, setCourts] = useState<Court[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
+  const [cameras, setCameras] = useState<CameraRow[]>([]);
+  const [courtCameras, setCourtCameras] = useState<CourtCameraRow[]>([]);
   const [newCourt, setNewCourt] = useState("");
   const [arenaName, setArenaName] = useState("");
   const [arenaCity, setArenaCity] = useState("");
@@ -35,14 +40,18 @@ function ArenaPanel() {
 
   async function load() {
     if (!adminArenaId) return;
-    const [{ data: a }, { data: c }, { data: v }] = await Promise.all([
+    const [{ data: a }, { data: c }, { data: v }, { data: cams }, { data: cc }] = await Promise.all([
       supabase.from("arenas").select("*").eq("id", adminArenaId).maybeSingle(),
       supabase.from("courts").select("*").eq("arena_id", adminArenaId).order("name"),
       supabase.from("videos").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }),
+      supabase.from("cameras").select("id,name").eq("arena_id", adminArenaId).order("name"),
+      supabase.from("court_cameras").select("id,court_id,camera_id").eq("arena_id", adminArenaId),
     ]);
     if (a) { setArena(a as Arena); setArenaName(a.name); setArenaCity((a as Arena).city ?? ""); setArenaState((a as Arena).state ?? ""); }
     setCourts((c ?? []) as Court[]);
     setVideos((v ?? []) as Video[]);
+    setCameras((cams ?? []) as CameraRow[]);
+    setCourtCameras((cc ?? []) as CourtCameraRow[]);
   }
   useEffect(() => { load(); }, [adminArenaId]);
 
@@ -84,6 +93,24 @@ function ArenaPanel() {
   async function removeCourt(id: string) {
     if (!confirm("Excluir esta quadra?")) return;
     await supabase.from("courts").delete().eq("id", id);
+    load();
+  }
+
+  async function toggleCourtCamera(courtId: string, cameraId: string, on: boolean) {
+    if (!arena) return;
+    if (on) {
+      const { error } = await supabase
+        .from("court_cameras")
+        .insert({ court_id: courtId, camera_id: cameraId, arena_id: arena.id });
+      if (error) return toast.error(error.message);
+    } else {
+      const { error } = await supabase
+        .from("court_cameras")
+        .delete()
+        .eq("court_id", courtId)
+        .eq("camera_id", cameraId);
+      if (error) return toast.error(error.message);
+    }
     load();
   }
 
@@ -181,29 +208,63 @@ function ArenaPanel() {
 
         <TabsContent value="courts" className="mt-4 space-y-4">
           <Card className="p-6">
+            <h2 className="mb-2 text-lg font-semibold">Minhas Quadras</h2>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Cadastre as quadras da sua arena e vincule as câmeras já registradas pelo super
+              admin para esta arena.
+            </p>
             <form onSubmit={addCourt} className="flex gap-2">
               <Input value={newCourt} onChange={(e) => setNewCourt(e.target.value)} placeholder="Nome da quadra" required />
               <Button type="submit">Adicionar</Button>
             </form>
           </Card>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {courts.map((c) => (
-              <Card key={c.id} className="p-5">
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="font-semibold">{c.name}</h3>
-                  <Button size="icon" variant="ghost" onClick={() => removeCourt(c.id)}>
-                    <Trash2 className="h-4 w-4" />
+            {courts.map((c) => {
+              const linkedIds = new Set(courtCameras.filter((cc) => cc.court_id === c.id).map((cc) => cc.camera_id));
+              return (
+                <Card key={c.id} className="p-5">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="font-semibold">{c.name}</h3>
+                    <Button size="icon" variant="ghost" onClick={() => removeCourt(c.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex justify-center rounded-lg bg-white p-3">
+                    <QRCodeCanvas id={`qr-${c.id}`} value={playerUrl(c.qr_token)} size={160} />
+                  </div>
+                  <p className="mt-2 break-all text-center text-[10px] text-muted-foreground">{playerUrl(c.qr_token)}</p>
+                  <Button variant="outline" size="sm" className="mt-3 w-full" onClick={() => downloadQR(c.id)}>
+                    <Download className="mr-2 h-4 w-4" /> Baixar QR
                   </Button>
-                </div>
-                <div className="flex justify-center rounded-lg bg-white p-3">
-                  <QRCodeCanvas id={`qr-${c.id}`} value={playerUrl(c.qr_token)} size={160} />
-                </div>
-                <p className="mt-2 break-all text-center text-[10px] text-muted-foreground">{playerUrl(c.qr_token)}</p>
-                <Button variant="outline" size="sm" className="mt-3 w-full" onClick={() => downloadQR(c.id)}>
-                  <Download className="mr-2 h-4 w-4" /> Baixar QR
-                </Button>
-              </Card>
-            ))}
+
+                  <div className="mt-4 border-t border-border pt-3">
+                    <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                      <Camera className="h-3.5 w-3.5" /> Câmeras vinculadas
+                    </div>
+                    {cameras.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        Nenhuma câmera disponível. Peça ao super admin para cadastrar câmeras nesta arena.
+                      </p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {cameras.map((cam) => {
+                          const checked = linkedIds.has(cam.id);
+                          return (
+                            <label key={cam.id} className="flex cursor-pointer items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={(v) => toggleCourtCamera(c.id, cam.id, Boolean(v))}
+                              />
+                              <span>{cam.name}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
             {courts.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma quadra cadastrada.</p>}
           </div>
         </TabsContent>
