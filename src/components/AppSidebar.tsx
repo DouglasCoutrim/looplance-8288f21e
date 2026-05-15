@@ -44,6 +44,7 @@ export function AppSidebar() {
   const items: NavItem[] = [];
   if (isSuperAdmin) {
     items.push({ title: "Arenas", url: "/admin", icon: Building2 });
+    items.push({ title: "Infra Global", url: "/admin/infra", icon: Cable });
   }
   if (adminArenaId) {
     items.push({ title: "Painel da Arena", url: "/painel", icon: LayoutDashboard });
