@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Camera, Download, Loader2, Trash2, Upload } from "lucide-react";
+import { VideoActions } from "@/components/VideoActions";
 
 export const Route = createFileRoute("/painel")({ component: ArenaPanel });
 
@@ -305,12 +306,13 @@ function ArenaPanel() {
               {videos.map((v) => (
                 <div key={v.id} className="rounded-lg border border-border bg-muted/20 p-3">
                   <video src={v.video_url} controls className="aspect-video w-full rounded-md bg-black" />
-                  <div className="mt-2 flex items-center justify-between">
+                  <div className="mt-2 flex items-center justify-between gap-2">
                     <p className="truncate text-sm font-medium">{v.title}</p>
                     <Button size="icon" variant="ghost" onClick={() => deleteVideo(v.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
+                  <VideoActions url={v.video_url} title={v.title} className="mt-2" />
                 </div>
               ))}
               {videos.length === 0 && <p className="text-sm text-muted-foreground">Nenhum vídeo publicado.</p>}
