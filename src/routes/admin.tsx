@@ -326,17 +326,18 @@ function GlobalUsersCard({ users, arenas, onChange }: { users: UserWithRoles[]; 
   }
 
   return (
-    <Card className="p-6">
-      <div className="mb-4 flex items-center justify-between gap-4">
+    <Card className="p-4 sm:p-6">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold">Usuários globais</h2>
           <p className="text-sm text-muted-foreground">Todo novo usuário entra como Jogador. Promova manualmente para Admin de Arena ou SuperAdmin.</p>
         </div>
-        <Input className="max-w-xs" placeholder="Buscar por nome..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Input className="w-full sm:max-w-xs" placeholder="Buscar por nome..." value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border">
-        <table className="w-full text-sm">
+      {/* Desktop / tablet: tabela */}
+      <div className="hidden md:block overflow-x-auto rounded-lg border border-border">
+        <table className="w-full min-w-[720px] text-sm">
           <thead className="bg-muted/40 text-left text-xs uppercase text-muted-foreground">
             <tr>
               <th className="p-3">Usuário</th>
@@ -354,7 +355,74 @@ function GlobalUsersCard({ users, arenas, onChange }: { users: UserWithRoles[]; 
           </tbody>
         </table>
       </div>
+
+      {/* Mobile: cards empilhados */}
+      <div className="space-y-3 md:hidden">
+        {filtered.map((u) => (
+          <PromoteCard key={u.id} user={u} arenas={arenas} arenaName={arenaName} onPromote={setRole} onRemove={removeRole} />
+        ))}
+        {filtered.length === 0 && (
+          <p className="p-6 text-center text-sm text-muted-foreground">Nenhum usuário</p>
+        )}
+      </div>
     </Card>
+  );
+}
+
+function PromoteCard(props: {
+  user: UserWithRoles;
+  arenas: ArenaRow[];
+  arenaName: (id: string | null) => string;
+  onPromote: (uid: string, role: RoleName, arenaId: string | null) => void;
+  onRemove: (uid: string, role: RoleName, arenaId: string | null) => void;
+}) {
+  const { user, arenas, arenaName, onPromote, onRemove } = props;
+  const [target, setTarget] = useState<RoleName>("player");
+  const [arenaId, setArenaId] = useState<string>("");
+
+  return (
+    <div className="rounded-lg border border-border p-3 space-y-3">
+      <div>
+        <p className="font-medium break-words">{user.full_name ?? "—"}</p>
+        <p className="text-[11px] text-muted-foreground break-all">{user.id}</p>
+      </div>
+      <div>
+        <p className="mb-1 text-xs uppercase text-muted-foreground">Papéis</p>
+        <div className="flex flex-wrap gap-1">
+          {user.roles.map((r, i) => (
+            <span key={i} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs">
+              {labelRole(r.role)}{r.arena_id ? ` · ${arenaName(r.arena_id)}` : ""}
+              <button className="text-destructive hover:text-destructive/80" onClick={() => onRemove(user.id, r.role, r.arena_id)} title="Remover">×</button>
+            </span>
+          ))}
+          {user.roles.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+        </div>
+      </div>
+      <div>
+        <p className="mb-1 text-xs uppercase text-muted-foreground">Promover</p>
+        <div className="flex flex-col gap-2">
+          <Select value={target} onValueChange={(v) => setTarget(v as RoleName)}>
+            <SelectTrigger className="h-9 w-full text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="player">Jogador</SelectItem>
+              <SelectItem value="admin_arena">Admin de Arena</SelectItem>
+              <SelectItem value="superadmin">SuperAdmin</SelectItem>
+            </SelectContent>
+          </Select>
+          {target === "admin_arena" && (
+            <Select value={arenaId} onValueChange={setArenaId}>
+              <SelectTrigger className="h-9 w-full text-xs"><SelectValue placeholder="Arena..." /></SelectTrigger>
+              <SelectContent>
+                {arenas.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+          <Button size="sm" className="w-full" onClick={() => onPromote(user.id, target, target === "admin_arena" ? arenaId || null : null)}>
+            Aplicar
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
