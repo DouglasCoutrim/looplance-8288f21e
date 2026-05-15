@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { useRoleSimulator } from "@/contexts/role-simulator";
 
 export type AppRole = "admin" | "user" | "superadmin" | "admin_arena" | "player";
 
