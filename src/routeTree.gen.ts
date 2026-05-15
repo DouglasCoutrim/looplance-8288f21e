@@ -20,6 +20,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AcessoNegadoRouteImport } from './routes/acesso-negado'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ArenaIdRouteImport } from './routes/arena.$id'
+import { Route as AdminInfraRouteImport } from './routes/admin.infra'
 import { Route as AdminArenaIdRouteImport } from './routes/admin.arena.$id'
 
 const SignupRoute = SignupRouteImport.update({
@@ -77,6 +78,11 @@ const ArenaIdRoute = ArenaIdRouteImport.update({
   path: '/arena/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminInfraRoute = AdminInfraRouteImport.update({
+  id: '/infra',
+  path: '/infra',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminArenaIdRoute = AdminArenaIdRouteImport.update({
   id: '/arena/$id',
   path: '/arena/$id',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof PerfilRoute
   '/replays': typeof ReplaysRoute
   '/signup': typeof SignupRoute
+  '/admin/infra': typeof AdminInfraRoute
   '/arena/$id': typeof ArenaIdRoute
   '/admin/arena/$id': typeof AdminArenaIdRoute
 }
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/perfil': typeof PerfilRoute
   '/replays': typeof ReplaysRoute
   '/signup': typeof SignupRoute
+  '/admin/infra': typeof AdminInfraRoute
   '/arena/$id': typeof ArenaIdRoute
   '/admin/arena/$id': typeof AdminArenaIdRoute
 }
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/perfil': typeof PerfilRoute
   '/replays': typeof ReplaysRoute
   '/signup': typeof SignupRoute
+  '/admin/infra': typeof AdminInfraRoute
   '/arena/$id': typeof ArenaIdRoute
   '/admin/arena/$id': typeof AdminArenaIdRoute
 }
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/replays'
     | '/signup'
+    | '/admin/infra'
     | '/arena/$id'
     | '/admin/arena/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/replays'
     | '/signup'
+    | '/admin/infra'
     | '/arena/$id'
     | '/admin/arena/$id'
   id:
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/replays'
     | '/signup'
+    | '/admin/infra'
     | '/arena/$id'
     | '/admin/arena/$id'
   fileRoutesById: FileRoutesById
@@ -264,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArenaIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/infra': {
+      id: '/admin/infra'
+      path: '/infra'
+      fullPath: '/admin/infra'
+      preLoaderRoute: typeof AdminInfraRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/arena/$id': {
       id: '/admin/arena/$id'
       path: '/arena/$id'
@@ -275,10 +294,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminInfraRoute: typeof AdminInfraRoute
   AdminArenaIdRoute: typeof AdminArenaIdRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminInfraRoute: AdminInfraRoute,
   AdminArenaIdRoute: AdminArenaIdRoute,
 }
 
@@ -300,13 +321,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Building2, LayoutDashboard, LogOut, PlayCircle } from "lucide-react";
+import { Building2, Cable, LayoutDashboard, LogOut, PlayCircle } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -44,6 +44,7 @@ export function AppSidebar() {
   const items: NavItem[] = [];
   if (isSuperAdmin) {
     items.push({ title: "Arenas", url: "/admin", icon: Building2 });
+    items.push({ title: "Infra Global", url: "/admin/infra", icon: Cable });
   }
   if (adminArenaId) {
     items.push({ title: "Painel da Arena", url: "/painel", icon: LayoutDashboard });
