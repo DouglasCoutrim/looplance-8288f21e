@@ -66,10 +66,28 @@ export function useAuth() {
     setLoading(false);
   }
 
-  const isSuperAdmin = roles.some((r) => r.role === "superadmin" || r.role === "admin");
-  const adminArenaId = roles.find((r) => r.role === "admin_arena")?.arena_id ?? null;
-  const playerArenaIds = roles.filter((r) => r.role === "player").map((r) => r.arena_id!).filter(Boolean);
+  const realIsSuperAdmin = roles.some((r) => r.role === "superadmin" || r.role === "admin");
+  const realAdminArenaId = roles.find((r) => r.role === "admin_arena")?.arena_id ?? null;
+  const realPlayerArenaIds = roles.filter((r) => r.role === "player").map((r) => r.arena_id!).filter(Boolean);
+
+  const sim = useRoleSimulator();
+  let isSuperAdmin = realIsSuperAdmin;
+  let adminArenaId = realAdminArenaId;
+  let playerArenaIds = realPlayerArenaIds;
+
+  if (realIsSuperAdmin && sim.mode !== "real") {
+    if (sim.mode === "admin_arena") {
+      isSuperAdmin = false;
+      adminArenaId = sim.simulatedArenaId;
+      playerArenaIds = [];
+    } else if (sim.mode === "player") {
+      isSuperAdmin = false;
+      adminArenaId = null;
+      playerArenaIds = sim.simulatedArenaId ? [sim.simulatedArenaId] : [];
+    }
+  }
+
   const isAdmin = isSuperAdmin || Boolean(adminArenaId);
 
-  return { session, user, roles, loading, isSuperAdmin, isAdmin, adminArenaId, playerArenaIds };
+  return { session, user, roles, loading, isSuperAdmin, isAdmin, adminArenaId, playerArenaIds, realIsSuperAdmin };
 }
