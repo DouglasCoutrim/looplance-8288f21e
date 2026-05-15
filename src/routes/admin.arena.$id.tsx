@@ -487,30 +487,50 @@ function WhiteLabelCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
 function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void }) {
   const [url, setUrl] = useState(arena.supabase_url ?? "");
   const [anon, setAnon] = useState(arena.supabase_anon_key ?? "");
+  const [serviceKey, setServiceKey] = useState("");
+  const [bucket, setBucket] = useState(arena.videos_bucket ?? "replays");
+  const [retention, setRetention] = useState<string>(arena.retention_days?.toString() ?? "");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setUrl(arena.supabase_url ?? "");
     setAnon(arena.supabase_anon_key ?? "");
+    setServiceKey("");
+    setBucket(arena.videos_bucket ?? "replays");
+    setRetention(arena.retention_days?.toString() ?? "");
   }, [arena.id]);
 
   async function save() {
     setBusy(true);
-    const { error } = await supabase.from("arenas").update({
-      supabase_url: url.trim() || null,
-      supabase_anon_key: anon.trim() || null,
-    }).eq("id", arena.id);
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success("Conexão salva"); onSaved();
+    try {
+      const { updateArenaConnection } = await import("@/lib/arena-admin.functions");
+      const days = retention.trim() ? parseInt(retention, 10) : null;
+      await updateArenaConnection({
+        data: {
+          arenaId: arena.id,
+          supabase_url: url.trim() || null,
+          supabase_anon_key: anon.trim() || null,
+          supabase_service_key: serviceKey.trim() || undefined,
+          videos_bucket: bucket.trim() || null,
+          retention_days: days,
+        },
+      });
+      toast.success("Conexão salva");
+      setServiceKey("");
+      onSaved();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao salvar");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <Card className="p-6">
       <h2 className="mb-1 text-lg font-semibold">Conexão com Supabase da arena</h2>
       <p className="mb-4 text-sm text-muted-foreground">
-        Usado para listar os vídeos gerados pelo pipeline local da arena (tabela <code>videos</code>).
-        A anon key fica visível no client; a proteção real depende das RLS policies do projeto remoto.
+        Cada arena pode ter o próprio projeto Supabase com bucket de vídeos. A <strong>service key</strong>
+        é usada apenas no servidor (limpeza por retenção) e nunca é exposta ao navegador.
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         <div>
@@ -520,6 +540,30 @@ function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
         <div>
           <Label>Anon key</Label>
           <Input placeholder="eyJhbGciOi..." value={anon} onChange={(e) => setAnon(e.target.value)} />
+        </div>
+        <div>
+          <Label>Service key (somente servidor)</Label>
+          <Input
+            type="password"
+            placeholder={arena.supabase_url ? "•••••• (deixe em branco para manter)" : "eyJhbGciOi..."}
+            value={serviceKey}
+            onChange={(e) => setServiceKey(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label>Bucket de vídeos</Label>
+          <Input placeholder="replays" value={bucket} onChange={(e) => setBucket(e.target.value)} />
+        </div>
+        <div>
+          <Label>Dias de retenção (opcional, sobrescreve global)</Label>
+          <Input
+            type="number"
+            min={1}
+            max={3650}
+            placeholder="ex: 30"
+            value={retention}
+            onChange={(e) => setRetention(e.target.value)}
+          />
         </div>
       </div>
       <div className="mt-4">
