@@ -96,6 +96,24 @@ function ArenaPanel() {
     load();
   }
 
+  async function toggleCourtCamera(courtId: string, cameraId: string, on: boolean) {
+    if (!arena) return;
+    if (on) {
+      const { error } = await supabase
+        .from("court_cameras")
+        .insert({ court_id: courtId, camera_id: cameraId, arena_id: arena.id });
+      if (error) return toast.error(error.message);
+    } else {
+      const { error } = await supabase
+        .from("court_cameras")
+        .delete()
+        .eq("court_id", courtId)
+        .eq("camera_id", cameraId);
+      if (error) return toast.error(error.message);
+    }
+    load();
+  }
+
   async function uploadVideo(e: React.FormEvent) {
     e.preventDefault();
     const file = fileRef.current?.files?.[0];
