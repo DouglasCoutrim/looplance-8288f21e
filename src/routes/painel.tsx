@@ -208,28 +208,63 @@ function ArenaPanel() {
 
         <TabsContent value="courts" className="mt-4 space-y-4">
           <Card className="p-6">
+            <h2 className="mb-2 text-lg font-semibold">Minhas Quadras</h2>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Cadastre as quadras da sua arena e vincule as câmeras já registradas pelo super
+              admin para esta arena.
+            </p>
             <form onSubmit={addCourt} className="flex gap-2">
               <Input value={newCourt} onChange={(e) => setNewCourt(e.target.value)} placeholder="Nome da quadra" required />
               <Button type="submit">Adicionar</Button>
             </form>
           </Card>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {courts.map((c) => (
-              <Card key={c.id} className="p-5">
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="font-semibold">{c.name}</h3>
-                  <Button size="icon" variant="ghost" onClick={() => removeCourt(c.id)}>
-                    <Trash2 className="h-4 w-4" />
+            {courts.map((c) => {
+              const linkedIds = new Set(courtCameras.filter((cc) => cc.court_id === c.id).map((cc) => cc.camera_id));
+              return (
+                <Card key={c.id} className="p-5">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="font-semibold">{c.name}</h3>
+                    <Button size="icon" variant="ghost" onClick={() => removeCourt(c.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex justify-center rounded-lg bg-white p-3">
+                    <QRCodeCanvas id={`qr-${c.id}`} value={playerUrl(c.qr_token)} size={160} />
+                  </div>
+                  <p className="mt-2 break-all text-center text-[10px] text-muted-foreground">{playerUrl(c.qr_token)}</p>
+                  <Button variant="outline" size="sm" className="mt-3 w-full" onClick={() => downloadQR(c.id)}>
+                    <Download className="mr-2 h-4 w-4" /> Baixar QR
                   </Button>
-                </div>
-                <div className="flex justify-center rounded-lg bg-white p-3">
-                  <QRCodeCanvas id={`qr-${c.id}`} value={playerUrl(c.qr_token)} size={160} />
-                </div>
-                <p className="mt-2 break-all text-center text-[10px] text-muted-foreground">{playerUrl(c.qr_token)}</p>
-                <Button variant="outline" size="sm" className="mt-3 w-full" onClick={() => downloadQR(c.id)}>
-                  <Download className="mr-2 h-4 w-4" /> Baixar QR
-                </Button>
-              </Card>
+
+                  <div className="mt-4 border-t border-border pt-3">
+                    <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                      <Camera className="h-3.5 w-3.5" /> Câmeras vinculadas
+                    </div>
+                    {cameras.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        Nenhuma câmera disponível. Peça ao super admin para cadastrar câmeras nesta arena.
+                      </p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {cameras.map((cam) => {
+                          const checked = linkedIds.has(cam.id);
+                          return (
+                            <label key={cam.id} className="flex cursor-pointer items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={(v) => toggleCourtCamera(c.id, cam.id, Boolean(v))}
+                              />
+                              <span>{cam.name}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
             ))}
             {courts.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma quadra cadastrada.</p>}
           </div>
