@@ -22,6 +22,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ArenaIdRouteImport } from './routes/arena.$id'
 import { Route as AdminInfraRouteImport } from './routes/admin.infra'
 import { Route as AdminArenaIdRouteImport } from './routes/admin.arena.$id'
+import { Route as ApiPublicHooksCleanupVideosRouteImport } from './routes/api/public/hooks/cleanup-videos'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -88,6 +89,12 @@ const AdminArenaIdRoute = AdminArenaIdRouteImport.update({
   path: '/arena/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiPublicHooksCleanupVideosRoute =
+  ApiPublicHooksCleanupVideosRouteImport.update({
+    id: '/api/public/hooks/cleanup-videos',
+    path: '/api/public/hooks/cleanup-videos',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/admin/infra': typeof AdminInfraRoute
   '/arena/$id': typeof ArenaIdRoute
   '/admin/arena/$id': typeof AdminArenaIdRoute
+  '/api/public/hooks/cleanup-videos': typeof ApiPublicHooksCleanupVideosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,6 +126,7 @@ export interface FileRoutesByTo {
   '/admin/infra': typeof AdminInfraRoute
   '/arena/$id': typeof ArenaIdRoute
   '/admin/arena/$id': typeof AdminArenaIdRoute
+  '/api/public/hooks/cleanup-videos': typeof ApiPublicHooksCleanupVideosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,6 +143,7 @@ export interface FileRoutesById {
   '/admin/infra': typeof AdminInfraRoute
   '/arena/$id': typeof ArenaIdRoute
   '/admin/arena/$id': typeof AdminArenaIdRoute
+  '/api/public/hooks/cleanup-videos': typeof ApiPublicHooksCleanupVideosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/admin/infra'
     | '/arena/$id'
     | '/admin/arena/$id'
+    | '/api/public/hooks/cleanup-videos'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/admin/infra'
     | '/arena/$id'
     | '/admin/arena/$id'
+    | '/api/public/hooks/cleanup-videos'
   id:
     | '__root__'
     | '/'
@@ -181,6 +193,7 @@ export interface FileRouteTypes {
     | '/admin/infra'
     | '/arena/$id'
     | '/admin/arena/$id'
+    | '/api/public/hooks/cleanup-videos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -195,6 +208,7 @@ export interface RootRouteChildren {
   ReplaysRoute: typeof ReplaysRoute
   SignupRoute: typeof SignupRoute
   ArenaIdRoute: typeof ArenaIdRoute
+  ApiPublicHooksCleanupVideosRoute: typeof ApiPublicHooksCleanupVideosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -290,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminArenaIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/public/hooks/cleanup-videos': {
+      id: '/api/public/hooks/cleanup-videos'
+      path: '/api/public/hooks/cleanup-videos'
+      fullPath: '/api/public/hooks/cleanup-videos'
+      preLoaderRoute: typeof ApiPublicHooksCleanupVideosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -317,17 +338,8 @@ const rootRouteChildren: RootRouteChildren = {
   ReplaysRoute: ReplaysRoute,
   SignupRoute: SignupRoute,
   ArenaIdRoute: ArenaIdRoute,
+  ApiPublicHooksCleanupVideosRoute: ApiPublicHooksCleanupVideosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

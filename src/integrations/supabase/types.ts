@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       arena_buttons: {
         Row: {
           arena_id: string
@@ -131,11 +149,13 @@ export type Database = {
           name: string
           owner_id: string | null
           primary_color: string
+          retention_days: number | null
           slug: string
           state: string | null
           supabase_anon_key: string | null
           supabase_service_key: string | null
           supabase_url: string | null
+          videos_bucket: string | null
         }
         Insert: {
           active?: boolean
@@ -146,11 +166,13 @@ export type Database = {
           name: string
           owner_id?: string | null
           primary_color?: string
+          retention_days?: number | null
           slug: string
           state?: string | null
           supabase_anon_key?: string | null
           supabase_service_key?: string | null
           supabase_url?: string | null
+          videos_bucket?: string | null
         }
         Update: {
           active?: boolean
@@ -161,11 +183,13 @@ export type Database = {
           name?: string
           owner_id?: string | null
           primary_color?: string
+          retention_days?: number | null
           slug?: string
           state?: string | null
           supabase_anon_key?: string | null
           supabase_service_key?: string | null
           supabase_url?: string | null
+          videos_bucket?: string | null
         }
         Relationships: []
       }
