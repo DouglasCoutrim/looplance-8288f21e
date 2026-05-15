@@ -66,29 +66,41 @@ function ArenaDashboard() {
   useEffect(() => {
     if (!arena?.id) return;
     (async () => {
-      const [{ data: q }, { data: r }] = await Promise.all([
-        supabase.from("courts").select("id,name").eq("arena_id", arena.id).order("name"),
-        supabase.from("videos")
-          .select("id,video_url,thumbnail_url,created_at,court_id")
-          .eq("arena_id", arena.id)
-          .order("created_at", { ascending: false })
-          .limit(500),
-      ]);
-
+      const { data: q } = await supabase.from("courts").select("id,name").eq("arena_id", arena.id).order("name");
       setQuadras(((q ?? []) as { id: string; name: string }[]).map((court) => ({ id: court.id, nome: court.name })));
-      const rs = ((r ?? []) as { id: string; video_url: string; thumbnail_url: string | null; created_at: string; court_id: string | null }[])
-        .map((video) => ({
-          id: video.id,
-          video_url: video.video_url,
-          thumbnail_url: video.thumbnail_url,
-          data_evento: video.created_at.slice(0, 10),
-          hora_evento: video.created_at.split("T")[1]?.slice(0, 8) ?? "00:00:00",
-          quadra_id: video.court_id,
-        }));
+
+      const useExternal = Boolean(arena.supabase_url && arena.supabase_anon_key);
+      const db = useExternal
+        ? getArenaClient(arena.supabase_url!, arena.supabase_anon_key!)
+        : supabase;
+
+      // External pipeline schema may differ — try arena_id filter first, fall back to no filter.
+      let rows: { id: string; video_url: string; thumbnail_url: string | null; created_at: string; court_id: string | null }[] = [];
+      const sel = "id,video_url,thumbnail_url,created_at,court_id";
+      const tryQ = async (withArena: boolean) => {
+        const builder = db.from("videos").select(sel).order("created_at", { ascending: false }).limit(500);
+        const { data, error } = withArena ? await builder.eq("arena_id", arena.id) : await builder;
+        return { data, error };
+      };
+      let res = await tryQ(!useExternal);
+      if (useExternal && (res.error || !(res.data ?? []).length)) {
+        const fallback = await tryQ(false);
+        if (!fallback.error) res = fallback;
+      }
+      rows = (res.data ?? []) as typeof rows;
+
+      const rs = rows.map((video) => ({
+        id: video.id,
+        video_url: video.video_url,
+        thumbnail_url: video.thumbnail_url,
+        data_evento: video.created_at.slice(0, 10),
+        hora_evento: video.created_at.split("T")[1]?.slice(0, 8) ?? "00:00:00",
+        quadra_id: video.court_id,
+      }));
       setReplays(rs);
       setSelected(rs[0] ?? null);
     })();
-  }, [arena?.id]);
+  }, [arena?.id, arena?.supabase_url, arena?.supabase_anon_key]);
 
   useEffect(() => {
     if (!user || !arena) return;
