@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Building2, LayoutDashboard, LogOut, PlayCircle } from "lucide-react";
+import { Building2, Cable, LayoutDashboard, LogOut, PlayCircle } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
