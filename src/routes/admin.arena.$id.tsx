@@ -106,6 +106,7 @@ function ArenaDetailPage() {
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
           <TabsTrigger value="patrocinadores">Patrocinadores</TabsTrigger>
           <TabsTrigger value="whitelabel">White Label</TabsTrigger>
+          <TabsTrigger value="conexao">Conexão</TabsTrigger>
         </TabsList>
 
         <TabsContent value="cameras">
@@ -122,6 +123,10 @@ function ArenaDetailPage() {
 
         <TabsContent value="whitelabel">
           <WhiteLabelCard arena={arena} onSaved={load} />
+        </TabsContent>
+
+        <TabsContent value="conexao">
+          <ConnectionCard arena={arena} onSaved={load} />
         </TabsContent>
       </Tabs>
     </AppShell>
