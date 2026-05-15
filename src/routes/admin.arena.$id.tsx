@@ -22,6 +22,8 @@ interface Arena {
   primary_color: string;
   city: string | null;
   state: string | null;
+  supabase_url: string | null;
+  supabase_anon_key: string | null;
 }
 interface Sponsor { id: string; name: string; logo_url: string; link_url: string | null; display_order: number }
 interface CamRow { id: string; name: string; rtsp_url: string; button_id: string | null }
@@ -41,7 +43,7 @@ function ArenaDetailPage() {
     setLoadError(null);
     const { data: a, error: arenaError } = await supabase
       .from("arenas")
-      .select("id,name,slug,logo_url,primary_color,city,state")
+      .select("id,name,slug,logo_url,primary_color,city,state,supabase_url,supabase_anon_key")
       .eq("id", id).maybeSingle();
     if (arenaError) {
       setLoadError(arenaError.message);
@@ -104,6 +106,7 @@ function ArenaDetailPage() {
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
           <TabsTrigger value="patrocinadores">Patrocinadores</TabsTrigger>
           <TabsTrigger value="whitelabel">White Label</TabsTrigger>
+          <TabsTrigger value="conexao">Conexão</TabsTrigger>
         </TabsList>
 
         <TabsContent value="cameras">
@@ -120,6 +123,10 @@ function ArenaDetailPage() {
 
         <TabsContent value="whitelabel">
           <WhiteLabelCard arena={arena} onSaved={load} />
+        </TabsContent>
+
+        <TabsContent value="conexao">
+          <ConnectionCard arena={arena} onSaved={load} />
         </TabsContent>
       </Tabs>
     </AppShell>
@@ -468,6 +475,53 @@ function WhiteLabelCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
             </Button>
           </div>
         </div>
+      </div>
+    </Card>
+  );
+}
+
+/* ----------------------------- Conexão de dados ----------------------------- */
+
+function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void }) {
+  const [url, setUrl] = useState(arena.supabase_url ?? "");
+  const [anon, setAnon] = useState(arena.supabase_anon_key ?? "");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setUrl(arena.supabase_url ?? "");
+    setAnon(arena.supabase_anon_key ?? "");
+  }, [arena.id]);
+
+  async function save() {
+    setBusy(true);
+    const { error } = await supabase.from("arenas").update({
+      supabase_url: url.trim() || null,
+      supabase_anon_key: anon.trim() || null,
+    }).eq("id", arena.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Conexão salva"); onSaved();
+  }
+
+  return (
+    <Card className="p-6">
+      <h2 className="mb-1 text-lg font-semibold">Conexão com Supabase da arena</h2>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Usado para listar os vídeos gerados pelo pipeline local da arena (tabela <code>videos</code>).
+        A anon key fica visível no client; a proteção real depende das RLS policies do projeto remoto.
+      </p>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <Label>Supabase URL</Label>
+          <Input placeholder="https://xxxx.supabase.co" value={url} onChange={(e) => setUrl(e.target.value)} />
+        </div>
+        <div>
+          <Label>Anon key</Label>
+          <Input placeholder="eyJhbGciOi..." value={anon} onChange={(e) => setAnon(e.target.value)} />
+        </div>
+      </div>
+      <div className="mt-4">
+        <Button onClick={save} disabled={busy}>{busy ? "Salvando..." : "Salvar conexão"}</Button>
       </div>
     </Card>
   );
