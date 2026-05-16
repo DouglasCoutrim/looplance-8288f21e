@@ -1,80 +1,82 @@
-# Conectar o backend agent à arena
 
-## Situação atual
+# Corrigir carrossel de "Destaques Recentes" na Home
 
-| Item | Status |
-|---|---|
-| Endpoint `/api/public/agent/config` | ✅ Funciona (exige Bearer) |
-| `config_version` + triggers de bump | ✅ Funciona |
-| Webhook push (`agent_webhook_url` / `_secret` na arena) | ✅ Schema pronto, sem valor cadastrado |
-| Geração e gestão de **ARENA_INGEST_TOKEN** | ❌ Tabela existe (`arena_ingest_tokens`) mas **não há UI** nem registros |
-| Prompt do Antigravity | ✅ Completo em `/mnt/documents/antigravity-prompt.md` |
+## Problema
 
-A peça que falta no **frontend** para o backend funcionar é a UI de tokens de ingest. Sem isso, o agente não consegue chamar `/api/public/agent/config`.
+O carrossel da Home (`src/routes/index.tsx`) hoje consome `useGlobalReplays`, que agrega replays de **vários** Supabase externos (um por arena) e faz `slice(0,3)` no resultado mesclado. Quando uma arena demora a responder, ou quando o cliente externo cacheia, o "lance que acabou de acontecer" pode aparecer atrás de vídeos antigos, sem realtime confiável.
 
-## O que vou fazer
+A correção isola o carrossel para usar **uma única fonte verdadeira, ordenada estritamente**, com Realtime dedicado e formatação no fuso do navegador.
 
-### 1. UI de Tokens de Ingest (aba "Conexão" em `admin.arena.$id.tsx`)
-- Listar tokens existentes (nome, prefixo, data, último uso, status revogado)
-- Botão "Gerar novo token":
-  - Server function `createArenaIngestToken({ arena_id, name })`
-  - Gera 32 bytes random → token plano `lov_ing_<base64url>`
-  - Salva `token_hash` (SHA-256) + `token_prefix` (8 chars) no DB
-  - Retorna o token **uma única vez** num modal (com botão copiar)
-- Botão "Revogar" por linha → seta `revoked_at = now()`
+## Decisão de fonte de dados
 
-### 2. Validação do token no endpoint `/api/public/agent/config`
-- Já existe; vou confirmar que ele faz lookup por `token_hash` e rejeita tokens revogados. Ajustar se necessário.
+Usar a tabela agregada `public.global_replays` do Supabase principal:
 
-### 3. Revisar o prompt do Antigravity (`/mnt/documents/antigravity-prompt.md`)
-- Já tem webhook + polling + mapeamento de IDs corretos
-- Vou adicionar instrução explícita: **como obter o `ARENA_INGEST_TOKEN`** (pelo painel) e exemplo de `.env` final
-- Pequeno reforço sobre idempotência e logs
+- Já é populada por trigger (`sync_global_replay`) sempre que um vídeo entra em `videos`, então reflete o que o backend faz upload.
+- Tem RLS `public_read = true` → não exige login.
+- Permite um único `subscribe()` em vez de N canais (um por arena).
+- Tem `video_url`, `thumbnail_url`, `arena_*`, `court_*`, `created_at` → tudo que o carrossel precisa.
 
-### 4. Documentar o fluxo de bring-up
-Adicionar no prompt um checklist "primeira vez":
-1. Admin gera token no painel → copia
-2. Admin preenche `agent_webhook_url` + `agent_webhook_secret` na aba Conexão
-3. Operador instala o agent no Pi com `ARENA_INGEST_TOKEN` no `.env`
-4. Agent valida com `GET /healthz` + um botão de teste
+Observação: se o pipeline Python publica direto no Supabase externo da arena (não no principal), o trigger não dispara. Confirmo isso na investigação inicial. Se for o caso, o carrossel ainda assim renderiza corretamente para qualquer fonte que **insira em `global_replays`** — alternativa documentada abaixo.
 
-## Arquivos a alterar
+## Mudanças
 
-- `src/lib/arena-admin.functions.ts` — `createArenaIngestToken`, `listArenaIngestTokens`, `revokeArenaIngestToken`
-- `src/routes/admin.arena.$id.tsx` — nova seção "Tokens do Agente" na aba Conexão
-- `src/routes/api/public/agent.config.ts` — confirmar/ajustar validação por hash
-- `/mnt/documents/antigravity-prompt.md` — seção "Bring-up" + exemplo de `.env`
+### 1. Novo hook `src/hooks/use-top-replays.ts`
 
-## Detalhes técnicos
+- Query inicial:
+  ```ts
+  supabase.from("global_replays")
+    .select("id, video_id, arena_id, arena_name, arena_slug, arena_primary_color, arena_logo_url, court_id, court_name, title, video_url, thumbnail_url, created_at")
+    .order("created_at", { ascending: false })
+    .limit(3);
+  ```
+- Realtime: `supabase.channel("home-top-replays").on("postgres_changes", { event: "INSERT", schema: "public", table: "global_replays" }, …)` — ao receber, prepende e corta para 3.
+- Também escuta `UPDATE` (caso `video_url` mude) e `DELETE`.
+- Cleanup com `removeChannel` no unmount.
+- Retorna `{ replays, loading }`.
 
-**Hash do token** (server-side, ao gerar):
-```ts
-const raw = crypto.randomBytes(32).toString('base64url');
-const token = `lov_ing_${raw}`;
-const token_hash = crypto.createHash('sha256').update(token).digest('hex');
-const token_prefix = token.slice(0, 12);
+### 2. Atualizar `src/routes/index.tsx`
+
+- Trocar `useGlobalReplays` → `useTopReplays` **apenas** para o bloco "Destaques Recentes" (carrossel). Manter `useGlobalReplays` para o feed "Replays recentes" abaixo (até confirmar que `global_replays` cobre tudo — segunda fase).
+- `topReplays` vem direto do novo hook (já é `limit(3)`, sem `slice`).
+- Formatação de data no fuso local do navegador:
+  ```ts
+  new Date(r.created_at).toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+  });
+  ```
+  Manter `formatDistanceToNow` (já é relativo ao "agora" local) e adicionar tooltip `title={...}` com a data absoluta no horário de Brasília.
+
+### 3. URL do player a partir do bucket público
+
+`src/lib/replays.ts` já existe e expõe `resolveReplayUrl(value)` apontando para `https://htirxluqufyexmpuhhbt.supabase.co/storage/v1/object/public/replays/`. O carrossel já usa essa função para `video_url` e `thumbnail_url` — manter. Garantir que **qualquer novo render** (incluindo realtime) passe pela mesma função, sem montar URL manualmente em outro lugar.
+
+### 4. Ativar realtime no Postgres (migração)
+
+Verificar se `global_replays` está na publication `supabase_realtime`. Se não, criar migração:
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE public.global_replays;
+ALTER TABLE public.global_replays REPLICA IDENTITY FULL;
 ```
+(executada via tool de migração, com aprovação do usuário).
 
-**Validação no endpoint**:
-```ts
-const auth = request.headers.get('authorization');
-const token = auth?.replace(/^Bearer /, '');
-const hash = sha256(token);
-const row = await supabaseAdmin
-  .from('arena_ingest_tokens')
-  .select('arena_id, revoked_at')
-  .eq('token_hash', hash)
-  .maybeSingle();
-if (!row || row.revoked_at) return 401;
-await supabaseAdmin.from('arena_ingest_tokens')
-  .update({ last_used_at: new Date().toISOString() })
-  .eq('token_hash', hash);
-```
+## Arquivos afetados
+
+- **novo**: `src/hooks/use-top-replays.ts`
+- **editado**: `src/routes/index.tsx` (apenas a seção "Destaques Recentes" + formatação de data)
+- **possível migração**: habilitar realtime em `global_replays`
 
 ## Critério de aceite
 
-1. Superadmin/admin abre **Arena → Conexão**, gera token, copia uma vez
-2. `curl -H "Authorization: Bearer <token>" .../api/public/agent/config` retorna a config completa com `config_version`
-3. Cadastrar webhook URL → criar uma quadra → o agente (quando rodando) recebe `POST /agent/reload` em <2s
-4. Revogar token → próxima chamada retorna 401
-5. Prompt do Antigravity contém o passo-a-passo completo de bring-up
+1. Abrir Home → os 3 cards mostram os 3 vídeos com `created_at` mais recente, sem exceção.
+2. Inserir um novo replay no banco → ele aparece como primeiro card em < 2s, sem F5.
+3. Datas exibidas batem com o horário de Brasília do usuário.
+4. URLs dos vídeos resolvem para `https://htirxluqufyexmpuhhbt.supabase.co/storage/v1/object/public/replays/<arquivo>`.
+
+## Pergunta antes de implementar
+
+O backend hoje insere os vídeos finais em:
+- (A) `public.videos` do Supabase **principal** (que via trigger popula `global_replays`), ou
+- (B) tabela `replays` do Supabase **externo de cada arena** (multi-tenant)?
+
+Se for (B), `global_replays` não recebe os inserts e o carrossel fica vazio. Nesse caso, a fonte do hook deve ser a `replays` da arena (como hoje), e a correção será aplicada lá — mantendo a estrutura do plano. Confirma qual é o fluxo atual?
