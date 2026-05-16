@@ -39,9 +39,9 @@ function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [arenas, setArenas] = useState<Arena[]>([]);
-  const [replays, setReplays] = useState<GlobalReplay[]>([]);
-  const [topReplays, setTopReplays] = useState<GlobalReplay[]>([]);
-  const [topLoading, setTopLoading] = useState(true);
+  const { replays, loading: replaysLoading } = useGlobalReplays();
+  const topReplays = useMemo(() => replays.slice(0, 3), [replays]);
+  const topLoading = replaysLoading;
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterState, setFilterState] = useState<string>("all");
@@ -63,41 +63,14 @@ function Home() {
 
   useEffect(() => {
     let cancelled = false;
-
-    const refreshReplays = async () => {
-      const [topRes, rRes] = await Promise.all([
-        supabase.from("global_replays" as never)
-          .select("*").order("created_at", { ascending: false }).limit(3),
-        supabase.from("global_replays" as never)
-          .select("*").order("created_at", { ascending: false }).limit(60),
-      ]);
-      if (cancelled) return;
-      if (topRes.data) setTopReplays(topRes.data as unknown as GlobalReplay[]);
-      if (rRes.data) setReplays(rRes.data as unknown as GlobalReplay[]);
-      setTopLoading(false);
-      setLoading(false);
-    };
-
     (async () => {
       const aRes = await supabase.from("public_arenas" as never).select("*");
       if (!cancelled && aRes.data) setArenas(aRes.data as Arena[]);
-      await refreshReplays();
+      if (!cancelled) setLoading(false);
     })();
-
-    const channel = supabase
-      .channel("home-global-replays")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "global_replays" },
-        () => { refreshReplays(); },
-      )
-      .subscribe();
-
-    return () => {
-      cancelled = true;
-      supabase.removeChannel(channel);
-    };
+    return () => { cancelled = true; };
   }, []);
+
 
   const liveIds = useMemo(() => {
     const set = new Set<string>();
