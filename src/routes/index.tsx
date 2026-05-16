@@ -9,7 +9,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { resolveReplayUrl } from "@/lib/replays";
-import { useGlobalReplays, type GlobalReplay } from "@/hooks/use-global-replays";
+import { useGlobalReplays } from "@/hooks/use-global-replays";
+import { useTopReplays } from "@/hooks/use-top-replays";
 import logoFull from "@/assets/logo-full.png";
 import { ChevronRight, Flame, Loader2, MapPin, Radio, Search, User as UserIcon } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
