@@ -68,21 +68,41 @@ function Home() {
   }, [carouselApi]);
 
   useEffect(() => {
-    (async () => {
-      const topRes = await supabase.from("global_replays" as never)
-        .select("*").order("created_at", { ascending: false }).limit(3);
-      if (topRes.data) setTopReplays(topRes.data as unknown as GlobalReplay[]);
-      setTopLoading(false);
+    let cancelled = false;
 
-      const [aRes, rRes] = await Promise.all([
-        supabase.from("public_arenas" as never).select("*"),
+    const refreshReplays = async () => {
+      const [topRes, rRes] = await Promise.all([
+        supabase.from("global_replays" as never)
+          .select("*").order("created_at", { ascending: false }).limit(3),
         supabase.from("global_replays" as never)
           .select("*").order("created_at", { ascending: false }).limit(60),
       ]);
-      if (aRes.data) setArenas(aRes.data as Arena[]);
+      if (cancelled) return;
+      if (topRes.data) setTopReplays(topRes.data as unknown as GlobalReplay[]);
       if (rRes.data) setReplays(rRes.data as unknown as GlobalReplay[]);
+      setTopLoading(false);
       setLoading(false);
+    };
+
+    (async () => {
+      const aRes = await supabase.from("public_arenas" as never).select("*");
+      if (!cancelled && aRes.data) setArenas(aRes.data as Arena[]);
+      await refreshReplays();
     })();
+
+    const channel = supabase
+      .channel("home-global-replays")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "global_replays" },
+        () => { refreshReplays(); },
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const liveIds = useMemo(() => {
@@ -307,7 +327,7 @@ function Home() {
                     </div>
                     <div className="p-2 text-[10px] text-muted-foreground">
                       {r.court_name ? `${r.court_name} · ` : ""}
-                      {format(new Date(`${r.data_evento}T${r.hora_evento}`), "dd MMM HH:mm", { locale: ptBR })}
+                      {format(new Date(r.created_at), "dd MMM HH:mm", { locale: ptBR })}
                     </div>
                   </button>
                 </li>
