@@ -609,6 +609,8 @@ function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
   const [serviceKey, setServiceKey] = useState("");
   const [bucket, setBucket] = useState(arena.videos_bucket ?? "replays");
   const [retention, setRetention] = useState<string>(arena.retention_days?.toString() ?? "");
+  const [webhookUrl, setWebhookUrl] = useState(arena.agent_webhook_url ?? "");
+  const [webhookSecret, setWebhookSecret] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -617,6 +619,8 @@ function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
     setServiceKey("");
     setBucket(arena.videos_bucket ?? "replays");
     setRetention(arena.retention_days?.toString() ?? "");
+    setWebhookUrl(arena.agent_webhook_url ?? "");
+    setWebhookSecret("");
   }, [arena.id]);
 
   async function save() {
@@ -632,10 +636,13 @@ function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
           supabase_service_key: serviceKey.trim() || undefined,
           videos_bucket: bucket.trim() || null,
           retention_days: days,
+          agent_webhook_url: webhookUrl.trim() || null,
+          agent_webhook_secret: webhookSecret.trim() || undefined,
         },
       });
       toast.success("Conexão salva");
       setServiceKey("");
+      setWebhookSecret("");
       onSaved();
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao salvar");
@@ -685,6 +692,34 @@ function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
           />
         </div>
       </div>
+
+      <div className="mt-6 border-t border-border pt-4">
+        <h3 className="mb-1 text-base font-semibold">Webhook do Agente</h3>
+        <p className="mb-3 text-sm text-muted-foreground">
+          URL HTTPS do agente da arena que deve ser avisado quando a configuração mudar (quadras,
+          câmeras, placas, botões). Se vazio, o agente continua revalidando a config a cada ~60s.
+        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <Label>URL do webhook</Label>
+            <Input
+              placeholder="https://arena-x.exemplo.com/agent/reload"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label>Segredo (HMAC, somente servidor)</Label>
+            <Input
+              type="password"
+              placeholder={arena.agent_webhook_url ? "•••••• (deixe em branco para manter)" : "segredo compartilhado"}
+              value={webhookSecret}
+              onChange={(e) => setWebhookSecret(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
       <div className="mt-4">
         <Button onClick={save} disabled={busy}>{busy ? "Salvando..." : "Salvar conexão"}</Button>
       </div>
