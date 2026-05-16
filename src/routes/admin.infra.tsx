@@ -134,6 +134,7 @@ function CamerasGlobal({ arenas, cameras, onChange }:
     if (error) return toast.error(error.message);
     toast.success(`Câmera vinculada a ${arenaName(arenaId)}`);
     setName(""); setRtsp(""); onChange();
+    notifyArena(arenaId, "cameras.updated");
   }
 
   async function remove(c: CamRow) {
@@ -142,6 +143,7 @@ function CamerasGlobal({ arenas, cameras, onChange }:
     if (error) return toast.error(error.message);
     toast.success("Câmera removida");
     onChange();
+    notifyArena(c.arena_id, "cameras.updated");
   }
 
   return (
