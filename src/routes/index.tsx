@@ -41,8 +41,7 @@ function Home() {
   const { user } = useAuth();
   const [arenas, setArenas] = useState<Arena[]>([]);
   const { replays, loading: replaysLoading } = useGlobalReplays();
-  const topReplays = useMemo(() => replays.slice(0, 3), [replays]);
-  const topLoading = replaysLoading;
+  const { replays: topReplays, loading: topLoading } = useTopReplays();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterState, setFilterState] = useState<string>("all");
