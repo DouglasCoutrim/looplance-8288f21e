@@ -107,14 +107,19 @@ function ArenaDetailPage() {
         </Card>
       )}
 
-      <Tabs defaultValue="cameras" className="w-full">
+      <Tabs defaultValue="quadras" className="w-full">
         <TabsList className="mb-4 flex flex-wrap">
+          <TabsTrigger value="quadras">Quadras</TabsTrigger>
           <TabsTrigger value="cameras">Câmeras</TabsTrigger>
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
           <TabsTrigger value="patrocinadores">Patrocinadores</TabsTrigger>
           <TabsTrigger value="whitelabel">White Label</TabsTrigger>
           <TabsTrigger value="conexao">Conexão</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="quadras">
+          <CourtsCard arenaId={id} cameras={cameras} />
+        </TabsContent>
 
         <TabsContent value="cameras">
           <CamerasReadOnly cameras={cameras} />
@@ -137,6 +142,105 @@ function ArenaDetailPage() {
         </TabsContent>
       </Tabs>
     </AppShell>
+  );
+}
+
+/* -------------------------------- Quadras -------------------------------- */
+
+interface Court { id: string; name: string; qr_token: string }
+
+function CourtsCard({ arenaId, cameras }: { arenaId: string; cameras: CamRow[] }) {
+  const [list, setList] = useState<Court[]>([]);
+  const [links, setLinks] = useState<{ court_id: string; camera_id: string }[]>([]);
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function load() {
+    const [{ data: c }, { data: l }] = await Promise.all([
+      supabase.from("courts").select("id,name,qr_token").eq("arena_id", arenaId).order("name"),
+      supabase.from("court_cameras").select("court_id,camera_id").eq("arena_id", arenaId),
+    ]);
+    setList((c ?? []) as Court[]);
+    setLinks((l ?? []) as any);
+  }
+  useEffect(() => { load(); }, [arenaId]);
+
+  async function add(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return toast.error("Informe o nome");
+    setBusy(true);
+    const { error } = await supabase.from("courts").insert({ arena_id: arenaId, name: name.trim() });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    setName(""); toast.success("Quadra criada"); load();
+  }
+
+  async function remove(c: Court) {
+    if (!confirm(`Remover quadra "${c.name}"? Isso também remove vínculos com câmeras.`)) return;
+    const { error } = await supabase.from("courts").delete().eq("id", c.id);
+    if (error) return toast.error(error.message);
+    load();
+  }
+
+  async function rename(c: Court, newName: string) {
+    const n = newName.trim();
+    if (!n || n === c.name) return;
+    const { error } = await supabase.from("courts").update({ name: n }).eq("id", c.id);
+    if (error) return toast.error(error.message);
+    load();
+  }
+
+  async function setCourtCamera(courtId: string, cameraId: string | null) {
+    await supabase.from("court_cameras").delete().eq("court_id", courtId);
+    if (cameraId) {
+      const { error } = await supabase.from("court_cameras").insert({
+        court_id: courtId, camera_id: cameraId, arena_id: arenaId,
+      });
+      if (error) return toast.error(error.message);
+    }
+    load();
+  }
+
+  return (
+    <Card className="p-6">
+      <h2 className="mb-1 text-lg font-semibold">Quadras desta arena</h2>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Cadastre as quadras e vincule a câmera responsável por cada uma. O nome aparece nos replays.
+      </p>
+
+      <form onSubmit={add} className="mb-6 grid gap-2 md:grid-cols-[1fr_auto]">
+        <Input placeholder="Ex: Quadra 1" value={name} onChange={(e) => setName(e.target.value)} />
+        <Button type="submit" disabled={busy}>{busy ? "Criando..." : "Adicionar quadra"}</Button>
+      </form>
+
+      {list.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhuma quadra cadastrada ainda.</p>
+      ) : (
+        <ul className="space-y-2">
+          {list.map((c) => {
+            const linked = links.find((l) => l.court_id === c.id)?.camera_id ?? "";
+            return (
+              <li key={c.id} className="grid gap-2 rounded-lg border border-border p-3 md:grid-cols-[1fr_240px_auto] md:items-center">
+                <Input
+                  defaultValue={c.name}
+                  onBlur={(e) => rename(c, e.target.value)}
+                />
+                <Select value={linked || "none"} onValueChange={(v) => setCourtCamera(c.id, v === "none" ? null : v)}>
+                  <SelectTrigger><SelectValue placeholder="Câmera vinculada" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sem câmera</SelectItem>
+                    {cameras.map((cam) => (
+                      <SelectItem key={cam.id} value={cam.id}>{cam.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button size="icon" variant="ghost" onClick={() => remove(c)}><Trash2 className="h-4 w-4" /></Button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Card>
   );
 }
 
