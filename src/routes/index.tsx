@@ -32,13 +32,6 @@ interface Arena {
   primary_color: string; logo_url: string | null;
   city: string | null; state: string | null;
 }
-interface GlobalReplay {
-  id: string; arena_id: string; arena_name: string; arena_slug: string;
-  arena_primary_color: string; arena_logo_url: string | null;
-  court_id: string | null; court_name: string | null;
-  title: string | null; video_url: string; thumbnail_url: string | null;
-  data_evento: string; hora_evento: string; created_at: string;
-}
 
 const LIVE_THRESHOLD_MS = 10 * 60 * 1000;
 
