@@ -91,9 +91,14 @@ function ArenaDetailPage() {
             </div>
           </div>
         </div>
-        <Button asChild variant="outline" size="sm">
-          <Link to="/admin/infra">Gerenciar infra global →</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/admin/ingest/$arenaId" params={{ arenaId: arena.id }}>Tokens de ingestão →</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/admin/infra">Gerenciar infra global →</Link>
+          </Button>
+        </div>
       </div>
 
       {loadError && (
