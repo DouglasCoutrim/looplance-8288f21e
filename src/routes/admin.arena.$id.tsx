@@ -26,6 +26,7 @@ interface Arena {
   supabase_anon_key: string | null;
   videos_bucket: string | null;
   retention_days: number | null;
+  agent_webhook_url: string | null;
 }
 interface Sponsor { id: string; name: string; logo_url: string; link_url: string | null; display_order: number }
 interface CamRow { id: string; name: string; rtsp_url: string; button_id: string | null }
