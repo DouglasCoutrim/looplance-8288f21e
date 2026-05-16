@@ -9,7 +9,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { resolveReplayUrl } from "@/lib/replays";
-import { useGlobalReplays, type GlobalReplay } from "@/hooks/use-global-replays";
+import { useGlobalReplays } from "@/hooks/use-global-replays";
+import { useTopReplays } from "@/hooks/use-top-replays";
 import logoFull from "@/assets/logo-full.png";
 import { ChevronRight, Flame, Loader2, MapPin, Radio, Search, User as UserIcon } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
@@ -39,9 +40,8 @@ function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [arenas, setArenas] = useState<Arena[]>([]);
-  const { replays, loading: replaysLoading } = useGlobalReplays();
-  const topReplays = useMemo(() => replays.slice(0, 3), [replays]);
-  const topLoading = replaysLoading;
+  const { replays } = useGlobalReplays();
+  const { replays: topReplays, loading: topLoading } = useTopReplays();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterState, setFilterState] = useState<string>("all");
@@ -162,7 +162,14 @@ function Home() {
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3">
                           <div className="flex items-end justify-between gap-2">
                             <p className="truncate text-sm font-bold text-white">{r.arena_name}</p>
-                            <p className="shrink-0 text-[10px] text-white/70">
+                            <p
+                              className="shrink-0 text-[10px] text-white/70"
+                              title={new Date(r.created_at).toLocaleString("pt-BR", {
+                                timeZone: "America/Sao_Paulo",
+                                day: "2-digit", month: "2-digit", year: "numeric",
+                                hour: "2-digit", minute: "2-digit",
+                              })}
+                            >
                               {formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: ptBR })}
                             </p>
                           </div>
