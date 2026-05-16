@@ -40,7 +40,7 @@ function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [arenas, setArenas] = useState<Arena[]>([]);
-  const { replays, loading: replaysLoading } = useGlobalReplays();
+  const { replays } = useGlobalReplays();
   const { replays: topReplays, loading: topLoading } = useTopReplays();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
