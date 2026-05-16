@@ -102,3 +102,69 @@ export const runCleanupNow = createServerFn({ method: "POST" })
     return result;
   });
 
+
+/* -------- Arena ingest tokens (agent auth) -------- */
+
+const ArenaIdSchema = z.object({ arenaId: z.string().uuid() });
+
+export const listArenaIngestTokens = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => ArenaIdSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertArenaAdminOrSuper(context.supabase, context.userId, data.arenaId);
+    const { data: rows, error } = await supabaseAdmin
+      .from("arena_ingest_tokens")
+      .select("id, name, token_prefix, created_at, last_used_at, revoked_at")
+      .eq("arena_id", data.arenaId)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return { tokens: rows ?? [] };
+  });
+
+const CreateTokenSchema = z.object({
+  arenaId: z.string().uuid(),
+  name: z.string().trim().min(1).max(120),
+});
+
+export const createArenaIngestToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => CreateTokenSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertArenaAdminOrSuper(context.supabase, context.userId, data.arenaId);
+    const raw = randomBytes(32).toString("base64url");
+    const token = `lov_ing_${raw}`;
+    const token_hash = createHash("sha256").update(token).digest("hex");
+    const token_prefix = token.slice(0, 12);
+    const { data: row, error } = await supabaseAdmin
+      .from("arena_ingest_tokens")
+      .insert({
+        arena_id: data.arenaId,
+        name: data.name,
+        token_hash,
+        token_prefix,
+        created_by: context.userId,
+      })
+      .select("id, name, token_prefix, created_at, last_used_at, revoked_at")
+      .single();
+    if (error) throw new Error(error.message);
+    return { token, row };
+  });
+
+const RevokeTokenSchema = z.object({
+  arenaId: z.string().uuid(),
+  tokenId: z.string().uuid(),
+});
+
+export const revokeArenaIngestToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => RevokeTokenSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertArenaAdminOrSuper(context.supabase, context.userId, data.arenaId);
+    const { error } = await supabaseAdmin
+      .from("arena_ingest_tokens")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("id", data.tokenId)
+      .eq("arena_id", data.arenaId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
