@@ -247,6 +247,7 @@ function BoardsGlobal({ arenas, boards, buttons, cameras, onChange }:
     if (error) return toast.error(error.message);
     toast.success("Placa cadastrada · 12 pinos (K1–K12) gerados automaticamente");
     setName(""); setSerial(""); onChange();
+    notifyArena(arenaId, "boards.updated");
   }
 
   async function remove(b: BoardRow) {
@@ -255,6 +256,7 @@ function BoardsGlobal({ arenas, boards, buttons, cameras, onChange }:
     if (error) return toast.error(error.message);
     toast.success("Placa removida");
     onChange();
+    notifyArena(b.arena_id, "boards.updated");
   }
 
   return (
