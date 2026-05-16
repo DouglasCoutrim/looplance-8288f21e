@@ -25,6 +25,7 @@ import { Route as AdminIngestArenaIdRouteImport } from './routes/admin.ingest.$a
 import { Route as AdminArenaIdRouteImport } from './routes/admin.arena.$id'
 import { Route as ApiPublicIngestReplayRouteImport } from './routes/api/public/ingest.replay'
 import { Route as ApiPublicHooksCleanupVideosRouteImport } from './routes/api/public/hooks/cleanup-videos'
+import { Route as ApiPublicAgentConfigRouteImport } from './routes/api/public/agent.config'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -107,6 +108,11 @@ const ApiPublicHooksCleanupVideosRoute =
     path: '/api/public/hooks/cleanup-videos',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAgentConfigRoute = ApiPublicAgentConfigRouteImport.update({
+  id: '/api/public/agent/config',
+  path: '/api/public/agent/config',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/arena/$id': typeof ArenaIdRoute
   '/admin/arena/$id': typeof AdminArenaIdRoute
   '/admin/ingest/$arenaId': typeof AdminIngestArenaIdRoute
+  '/api/public/agent/config': typeof ApiPublicAgentConfigRoute
   '/api/public/hooks/cleanup-videos': typeof ApiPublicHooksCleanupVideosRoute
   '/api/public/ingest/replay': typeof ApiPublicIngestReplayRoute
 }
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/arena/$id': typeof ArenaIdRoute
   '/admin/arena/$id': typeof AdminArenaIdRoute
   '/admin/ingest/$arenaId': typeof AdminIngestArenaIdRoute
+  '/api/public/agent/config': typeof ApiPublicAgentConfigRoute
   '/api/public/hooks/cleanup-videos': typeof ApiPublicHooksCleanupVideosRoute
   '/api/public/ingest/replay': typeof ApiPublicIngestReplayRoute
 }
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/arena/$id': typeof ArenaIdRoute
   '/admin/arena/$id': typeof AdminArenaIdRoute
   '/admin/ingest/$arenaId': typeof AdminIngestArenaIdRoute
+  '/api/public/agent/config': typeof ApiPublicAgentConfigRoute
   '/api/public/hooks/cleanup-videos': typeof ApiPublicHooksCleanupVideosRoute
   '/api/public/ingest/replay': typeof ApiPublicIngestReplayRoute
 }
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/arena/$id'
     | '/admin/arena/$id'
     | '/admin/ingest/$arenaId'
+    | '/api/public/agent/config'
     | '/api/public/hooks/cleanup-videos'
     | '/api/public/ingest/replay'
   fileRoutesByTo: FileRoutesByTo
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/arena/$id'
     | '/admin/arena/$id'
     | '/admin/ingest/$arenaId'
+    | '/api/public/agent/config'
     | '/api/public/hooks/cleanup-videos'
     | '/api/public/ingest/replay'
   id:
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
     | '/arena/$id'
     | '/admin/arena/$id'
     | '/admin/ingest/$arenaId'
+    | '/api/public/agent/config'
     | '/api/public/hooks/cleanup-videos'
     | '/api/public/ingest/replay'
   fileRoutesById: FileRoutesById
@@ -232,6 +244,7 @@ export interface RootRouteChildren {
   ReplaysRoute: typeof ReplaysRoute
   SignupRoute: typeof SignupRoute
   ArenaIdRoute: typeof ArenaIdRoute
+  ApiPublicAgentConfigRoute: typeof ApiPublicAgentConfigRoute
   ApiPublicHooksCleanupVideosRoute: typeof ApiPublicHooksCleanupVideosRoute
   ApiPublicIngestReplayRoute: typeof ApiPublicIngestReplayRoute
 }
@@ -350,6 +363,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksCleanupVideosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/agent/config': {
+      id: '/api/public/agent/config'
+      path: '/api/public/agent/config'
+      fullPath: '/api/public/agent/config'
+      preLoaderRoute: typeof ApiPublicAgentConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -379,6 +399,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReplaysRoute: ReplaysRoute,
   SignupRoute: SignupRoute,
   ArenaIdRoute: ArenaIdRoute,
+  ApiPublicAgentConfigRoute: ApiPublicAgentConfigRoute,
   ApiPublicHooksCleanupVideosRoute: ApiPublicHooksCleanupVideosRoute,
   ApiPublicIngestReplayRoute: ApiPublicIngestReplayRoute,
 }
