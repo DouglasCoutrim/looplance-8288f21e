@@ -138,8 +138,9 @@ function ArenaDetailPage() {
           <WhiteLabelCard arena={arena} onSaved={load} />
         </TabsContent>
 
-        <TabsContent value="conexao">
+        <TabsContent value="conexao" className="space-y-6">
           <ConnectionCard arena={arena} onSaved={load} />
+          <AgentTokensCard arenaId={arena.id} />
         </TabsContent>
       </Tabs>
     </AppShell>
@@ -722,6 +723,158 @@ function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
 
       <div className="mt-4">
         <Button onClick={save} disabled={busy}>{busy ? "Salvando..." : "Salvar conexão"}</Button>
+      </div>
+    </Card>
+  );
+}
+
+/* ----------------------------- Tokens do Agente ----------------------------- */
+
+type IngestToken = {
+  id: string;
+  name: string;
+  token_prefix: string;
+  created_at: string;
+  last_used_at: string | null;
+  revoked_at: string | null;
+};
+
+function AgentTokensCard({ arenaId }: { arenaId: string }) {
+  const [list, setList] = useState<IngestToken[]>([]);
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [newToken, setNewToken] = useState<string | null>(null);
+
+  async function load() {
+    try {
+      const { listArenaIngestTokens } = await import("@/lib/arena-admin.functions");
+      const { tokens } = await listArenaIngestTokens({ data: { arenaId } });
+      setList(tokens as IngestToken[]);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao carregar tokens");
+    }
+  }
+
+  useEffect(() => {
+    setNewToken(null);
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [arenaId]);
+
+  async function create() {
+    if (!name.trim()) {
+      toast.error("Dê um nome ao token (ex: 'Pi quadra 1').");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { createArenaIngestToken } = await import("@/lib/arena-admin.functions");
+      const res = await createArenaIngestToken({ data: { arenaId, name: name.trim() } });
+      setNewToken(res.token);
+      setName("");
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao gerar token");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function revoke(tokenId: string) {
+    if (!confirm("Revogar este token? O agente que estiver usando vai parar.")) return;
+    try {
+      const { revokeArenaIngestToken } = await import("@/lib/arena-admin.functions");
+      await revokeArenaIngestToken({ data: { arenaId, tokenId } });
+      toast.success("Token revogado");
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao revogar");
+    }
+  }
+
+  async function copyToken() {
+    if (!newToken) return;
+    try {
+      await navigator.clipboard.writeText(newToken);
+      toast.success("Token copiado");
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
+  }
+
+  return (
+    <Card className="p-6">
+      <h2 className="mb-1 text-lg font-semibold">Tokens do Agente (ingest)</h2>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Use esses tokens no <code>ARENA_INGEST_TOKEN</code> do agente que roda na arena.
+        O agente chama <code>GET /api/public/agent/config</code> com{" "}
+        <code>Authorization: Bearer &lt;token&gt;</code>. O token é mostrado uma única vez —
+        guarde com cuidado.
+      </p>
+
+      <div className="flex gap-2">
+        <Input
+          placeholder="Nome do token (ex: 'Pi principal')"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <Button onClick={create} disabled={busy}>
+          {busy ? "Gerando..." : "Gerar token"}
+        </Button>
+      </div>
+
+      {newToken && (
+        <div className="mt-4 rounded-md border border-primary/40 bg-primary/5 p-4">
+          <p className="mb-2 text-sm font-semibold">
+            Novo token (copie agora — não será mostrado novamente):
+          </p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 break-all rounded bg-background px-2 py-1 text-xs">
+              {newToken}
+            </code>
+            <Button size="sm" variant="outline" onClick={copyToken}>
+              Copiar
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setNewToken(null)}>
+              OK
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-6 space-y-2">
+        {list.length === 0 && (
+          <p className="text-sm text-muted-foreground">Nenhum token cadastrado ainda.</p>
+        )}
+        {list.map((t) => (
+          <div
+            key={t.id}
+            className="flex flex-wrap items-center gap-3 rounded-md border border-border p-3 text-sm"
+          >
+            <div className="flex-1">
+              <div className="font-medium">
+                {t.name}{" "}
+                {t.revoked_at && (
+                  <span className="ml-2 rounded bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
+                    revogado
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                <code>{t.token_prefix}…</code> · criado{" "}
+                {new Date(t.created_at).toLocaleString("pt-BR")}
+                {t.last_used_at && (
+                  <> · último uso {new Date(t.last_used_at).toLocaleString("pt-BR")}</>
+                )}
+              </div>
+            </div>
+            {!t.revoked_at && (
+              <Button size="sm" variant="destructive" onClick={() => revoke(t.id)}>
+                Revogar
+              </Button>
+            )}
+          </div>
+        ))}
       </div>
     </Card>
   );

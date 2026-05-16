@@ -1,78 +1,80 @@
-## Objetivo
+# Conectar o backend agent à arena
 
-Fazer o frontend avisar o agente da arena sempre que houver mudança em **arenas, quadras, câmeras, placas zero‑delay, botões ou vínculos quadra↔câmera**, para o agente recarregar o `/api/public/agent/config` imediatamente e gerar vídeos já mapeados nos IDs corretos.
+## Situação atual
 
-## Abordagem (duas camadas, complementares)
+| Item | Status |
+|---|---|
+| Endpoint `/api/public/agent/config` | ✅ Funciona (exige Bearer) |
+| `config_version` + triggers de bump | ✅ Funciona |
+| Webhook push (`agent_webhook_url` / `_secret` na arena) | ✅ Schema pronto, sem valor cadastrado |
+| Geração e gestão de **ARENA_INGEST_TOKEN** | ❌ Tabela existe (`arena_ingest_tokens`) mas **não há UI** nem registros |
+| Prompt do Antigravity | ✅ Completo em `/mnt/documents/antigravity-prompt.md` |
 
-1. **Push (instantâneo) via webhook** — cada arena cadastra a URL HTTP do seu agente; o backend Lovable envia um POST de invalidação sempre que algo muda.
-2. **Pull (fallback) por versão** — o endpoint `/api/public/agent/config` passa a retornar `config_version` (timestamp/inteiro). O agente já revalida a cada 60s e compara versão — se mudou, recarrega.
+A peça que falta no **frontend** para o backend funcionar é a UI de tokens de ingest. Sem isso, o agente não consegue chamar `/api/public/agent/config`.
 
-Assim, mesmo se o webhook falhar (rede do clube, agente offline no momento), na próxima revalidação o agente pega a config nova sozinho.
+## O que vou fazer
 
-## Mudanças no banco
+### 1. UI de Tokens de Ingest (aba "Conexão" em `admin.arena.$id.tsx`)
+- Listar tokens existentes (nome, prefixo, data, último uso, status revogado)
+- Botão "Gerar novo token":
+  - Server function `createArenaIngestToken({ arena_id, name })`
+  - Gera 32 bytes random → token plano `lov_ing_<base64url>`
+  - Salva `token_hash` (SHA-256) + `token_prefix` (8 chars) no DB
+  - Retorna o token **uma única vez** num modal (com botão copiar)
+- Botão "Revogar" por linha → seta `revoked_at = now()`
 
-Tabela `arenas` — adicionar:
-- `agent_webhook_url text` (URL HTTPS do agente, ex.: `https://arena-x.local:8443/agent/reload` ou um túnel)
-- `agent_webhook_secret text` (segredo p/ HMAC do payload)
-- `config_version bigint not null default 1`
+### 2. Validação do token no endpoint `/api/public/agent/config`
+- Já existe; vou confirmar que ele faz lookup por `token_hash` e rejeita tokens revogados. Ajustar se necessário.
 
-Trigger `bump_arena_config_version()` que incrementa `arenas.config_version` e atualiza `updated_at` sempre que houver INSERT/UPDATE/DELETE em:
-`courts`, `cameras`, `court_cameras`, `arena_buttons`, `zero_delay_boards`, e em colunas relevantes de `arenas` (nome, slug, bucket, retention, supabase_*).
+### 3. Revisar o prompt do Antigravity (`/mnt/documents/antigravity-prompt.md`)
+- Já tem webhook + polling + mapeamento de IDs corretos
+- Vou adicionar instrução explícita: **como obter o `ARENA_INGEST_TOKEN`** (pelo painel) e exemplo de `.env` final
+- Pequeno reforço sobre idempotência e logs
 
-## Backend (TanStack Start)
+### 4. Documentar o fluxo de bring-up
+Adicionar no prompt um checklist "primeira vez":
+1. Admin gera token no painel → copia
+2. Admin preenche `agent_webhook_url` + `agent_webhook_secret` na aba Conexão
+3. Operador instala o agent no Pi com `ARENA_INGEST_TOKEN` no `.env`
+4. Agent valida com `GET /healthz` + um botão de teste
 
-1. `src/lib/agent-notify.server.ts` — helper `notifyAgent(arenaId, reason)`:
-   - lê `agent_webhook_url`, `agent_webhook_secret`, `config_version` da arena;
-   - envia POST JSON `{ arena_id, reason, config_version, ts }` com header `X-Agent-Signature: sha256=<hmac>`;
-   - timeout 3s, 2 retries com backoff; falhas viram log (não bloqueia UI — o pull cobre).
+## Arquivos a alterar
 
-2. Server fn `notifyArenaAgent` (`src/lib/agent-notify.functions.ts`) com `requireSupabaseAuth` + checagem `is_arena_admin || superadmin`. Chamada pelo frontend após cada save de:
-   - criar/renomear/excluir quadra
-   - criar/editar/excluir câmera
-   - vincular/desvincular câmera↔botão
-   - vincular/desvincular quadra↔câmera
-   - criar/excluir placa ARC‑968
-   - editar conexão da arena (já existe em `updateArenaConnection` — chamar `notifyArenaAgent` no fim)
+- `src/lib/arena-admin.functions.ts` — `createArenaIngestToken`, `listArenaIngestTokens`, `revokeArenaIngestToken`
+- `src/routes/admin.arena.$id.tsx` — nova seção "Tokens do Agente" na aba Conexão
+- `src/routes/api/public/agent.config.ts` — confirmar/ajustar validação por hash
+- `/mnt/documents/antigravity-prompt.md` — seção "Bring-up" + exemplo de `.env`
 
-3. `src/routes/api/public/agent.config.ts` — passar a incluir `config_version` no JSON de resposta.
+## Detalhes técnicos
 
-4. Novo campo no admin (página de gerenciamento da arena, aba **Conexão**): inputs para `agent_webhook_url` e `agent_webhook_secret` (este último write‑only, salvo via `updateArenaConnection`).
-
-## Frontend
-
-- `src/routes/admin.arena.$id.tsx`
-  - Aba **Conexão**: campos para URL e segredo do webhook do agente.
-  - Aba **Quadras** (`CourtsCard`): após `add/remove/rename/setCourtCamera` → `notifyArenaAgent({ arenaId, reason })`.
-  - Aba **Câmeras**: após qualquer mutação → `notifyArenaAgent`.
-  - Aba **Placas/Botões**: idem.
-
-Helper único `useNotifyAgent(arenaId)` para não repetir código.
-
-## Contrato do webhook (documentar no prompt do Antigravity)
-
-```
-POST {agent_webhook_url}
-Headers:
-  Content-Type: application/json
-  X-Agent-Signature: sha256=<hex hmac do body com agent_webhook_secret>
-Body:
-  { "arena_id": "...", "reason": "courts.updated", "config_version": 42, "ts": "2026-..." }
-Resposta esperada: 2xx (agente dispara reload do /agent/config).
+**Hash do token** (server-side, ao gerar):
+```ts
+const raw = crypto.randomBytes(32).toString('base64url');
+const token = `lov_ing_${raw}`;
+const token_hash = crypto.createHash('sha256').update(token).digest('hex');
+const token_prefix = token.slice(0, 12);
 ```
 
-Razões padronizadas: `arena.updated`, `courts.updated`, `cameras.updated`, `court_cameras.updated`, `boards.updated`, `buttons.updated`.
+**Validação no endpoint**:
+```ts
+const auth = request.headers.get('authorization');
+const token = auth?.replace(/^Bearer /, '');
+const hash = sha256(token);
+const row = await supabaseAdmin
+  .from('arena_ingest_tokens')
+  .select('arena_id, revoked_at')
+  .eq('token_hash', hash)
+  .maybeSingle();
+if (!row || row.revoked_at) return 401;
+await supabaseAdmin.from('arena_ingest_tokens')
+  .update({ last_used_at: new Date().toISOString() })
+  .eq('token_hash', hash);
+```
 
 ## Critério de aceite
 
-- Cadastrar uma quadra nova → em ≤2s o agente recarrega config; próximo replay já sai com `court_id` correto e `court_name` aparecendo no carrossel.
-- Sem webhook configurado (ou agente offline): em ≤60s o pull pega `config_version` nova e recarrega.
-- Erros de webhook ficam só no log; o admin não vê falha de UI.
-
-## Arquivos a criar/editar
-
-- migration: colunas + trigger + função `bump_arena_config_version`
-- novo: `src/lib/agent-notify.server.ts`, `src/lib/agent-notify.functions.ts`
-- editar: `src/routes/api/public/agent.config.ts` (incluir `config_version`)
-- editar: `src/lib/arena-admin.functions.ts` (chamar notify em `updateArenaConnection`, adicionar campos webhook)
-- editar: `src/routes/admin.arena.$id.tsx` (campos webhook + chamadas notify nas abas)
-- atualizar: `/mnt/documents/antigravity-prompt.md` com o contrato do webhook + revalidação por `config_version`
+1. Superadmin/admin abre **Arena → Conexão**, gera token, copia uma vez
+2. `curl -H "Authorization: Bearer <token>" .../api/public/agent/config` retorna a config completa com `config_version`
+3. Cadastrar webhook URL → criar uma quadra → o agente (quando rodando) recebe `POST /agent/reload` em <2s
+4. Revogar token → próxima chamada retorna 401
+5. Prompt do Antigravity contém o passo-a-passo completo de bring-up
