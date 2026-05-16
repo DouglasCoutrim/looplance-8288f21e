@@ -29,7 +29,15 @@ export const updateArenaConnection = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ConnSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertSuper(context.supabase, context.userId);
-    const update: Record<string, unknown> = {
+    const update: {
+      supabase_url: string | null;
+      supabase_anon_key: string | null;
+      videos_bucket: string | null;
+      retention_days: number | null;
+      supabase_service_key?: string;
+      agent_webhook_url?: string | null;
+      agent_webhook_secret?: string;
+    } = {
       supabase_url: data.supabase_url,
       supabase_anon_key: data.supabase_anon_key,
       videos_bucket: data.videos_bucket,
