@@ -347,6 +347,7 @@ function MappingGlobal({ arenas, boards, buttons, cameras, onChange }:
       toast.success("Pino liberado");
     }
     onChange();
+    notifyArena(arenaId, "buttons.updated");
   }
 
   const map = arenaPins
