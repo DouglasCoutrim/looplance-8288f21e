@@ -1,9 +1,20 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { createHash, randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { runCleanupRoutine } from "@/lib/cleanup.server";
 import { notifyAgent } from "@/lib/agent-notify.server";
+
+async function assertArenaAdminOrSuper(supabase: any, userId: string, arenaId: string) {
+  const [sup, adm] = await Promise.all([
+    supabase.rpc("has_role", { _user_id: userId, _role: "superadmin" }),
+    supabase.rpc("is_arena_admin", { _user_id: userId, _arena_id: arenaId }),
+  ]);
+  if (sup.error) throw new Error(sup.error.message);
+  if (adm.error) throw new Error(adm.error.message);
+  if (!sup.data && !adm.data) throw new Error("Sem permissão nesta arena.");
+}
 
 async function assertSuper(supabase: any, userId: string) {
   const { data, error } = await supabase.rpc("has_role", { _user_id: userId, _role: "superadmin" });
