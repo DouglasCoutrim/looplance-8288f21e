@@ -84,6 +84,7 @@ export const Route = createFileRoute('/api/public/agent/config')({
           JSON.stringify({
             ok: true,
             generated_at: new Date().toISOString(),
+            config_version: (arenaRes.data as any).config_version ?? 0,
             arena: arenaRes.data,
             cameras: camerasRes.data ?? [],
             buttons: buttonsRes.data ?? [],
