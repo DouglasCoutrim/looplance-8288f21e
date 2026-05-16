@@ -327,7 +327,7 @@ function Home() {
                     </div>
                     <div className="p-2 text-[10px] text-muted-foreground">
                       {r.court_name ? `${r.court_name} · ` : ""}
-                      {format(new Date(`${r.data_evento}T${r.hora_evento}`), "dd MMM HH:mm", { locale: ptBR })}
+                      {format(new Date(r.created_at), "dd MMM HH:mm", { locale: ptBR })}
                     </div>
                   </button>
                 </li>
