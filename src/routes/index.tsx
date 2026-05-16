@@ -162,7 +162,14 @@ function Home() {
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3">
                           <div className="flex items-end justify-between gap-2">
                             <p className="truncate text-sm font-bold text-white">{r.arena_name}</p>
-                            <p className="shrink-0 text-[10px] text-white/70">
+                            <p
+                              className="shrink-0 text-[10px] text-white/70"
+                              title={new Date(r.created_at).toLocaleString("pt-BR", {
+                                timeZone: "America/Sao_Paulo",
+                                day: "2-digit", month: "2-digit", year: "numeric",
+                                hour: "2-digit", minute: "2-digit",
+                              })}
+                            >
                               {formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: ptBR })}
                             </p>
                           </div>
