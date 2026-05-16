@@ -166,6 +166,15 @@ function CourtsCard({ arenaId, cameras }: { arenaId: string; cameras: CamRow[] }
   }
   useEffect(() => { load(); }, [arenaId]);
 
+  async function notify(reason: "courts.updated" | "court_cameras.updated") {
+    try {
+      const { notifyArenaAgent } = await import("@/lib/agent-notify.functions");
+      await notifyArenaAgent({ data: { arenaId, reason } });
+    } catch {
+      /* fire-and-forget */
+    }
+  }
+
   async function add(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return toast.error("Informe o nome");
@@ -173,14 +182,14 @@ function CourtsCard({ arenaId, cameras }: { arenaId: string; cameras: CamRow[] }
     const { error } = await supabase.from("courts").insert({ arena_id: arenaId, name: name.trim() });
     setBusy(false);
     if (error) return toast.error(error.message);
-    setName(""); toast.success("Quadra criada"); load();
+    setName(""); toast.success("Quadra criada"); load(); notify("courts.updated");
   }
 
   async function remove(c: Court) {
     if (!confirm(`Remover quadra "${c.name}"? Isso também remove vínculos com câmeras.`)) return;
     const { error } = await supabase.from("courts").delete().eq("id", c.id);
     if (error) return toast.error(error.message);
-    load();
+    load(); notify("courts.updated");
   }
 
   async function rename(c: Court, newName: string) {
@@ -188,7 +197,7 @@ function CourtsCard({ arenaId, cameras }: { arenaId: string; cameras: CamRow[] }
     if (!n || n === c.name) return;
     const { error } = await supabase.from("courts").update({ name: n }).eq("id", c.id);
     if (error) return toast.error(error.message);
-    load();
+    load(); notify("courts.updated");
   }
 
   async function setCourtCamera(courtId: string, cameraId: string | null) {
@@ -199,7 +208,7 @@ function CourtsCard({ arenaId, cameras }: { arenaId: string; cameras: CamRow[] }
       });
       if (error) return toast.error(error.message);
     }
-    load();
+    load(); notify("court_cameras.updated");
   }
 
   return (
