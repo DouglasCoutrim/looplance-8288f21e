@@ -21,6 +21,7 @@ import { Route as AcessoNegadoRouteImport } from './routes/acesso-negado'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ArenaIdRouteImport } from './routes/arena.$id'
 import { Route as AdminInfraRouteImport } from './routes/admin.infra'
+import { Route as AdminIngestArenaIdRouteImport } from './routes/admin.ingest.$arenaId'
 import { Route as AdminArenaIdRouteImport } from './routes/admin.arena.$id'
 import { Route as ApiPublicIngestReplayRouteImport } from './routes/api/public/ingest.replay'
 import { Route as ApiPublicHooksCleanupVideosRouteImport } from './routes/api/public/hooks/cleanup-videos'
@@ -85,6 +86,11 @@ const AdminInfraRoute = AdminInfraRouteImport.update({
   path: '/infra',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminIngestArenaIdRoute = AdminIngestArenaIdRouteImport.update({
+  id: '/ingest/$arenaId',
+  path: '/ingest/$arenaId',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminArenaIdRoute = AdminArenaIdRouteImport.update({
   id: '/arena/$id',
   path: '/arena/$id',
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/admin/infra': typeof AdminInfraRoute
   '/arena/$id': typeof ArenaIdRoute
   '/admin/arena/$id': typeof AdminArenaIdRoute
+  '/admin/ingest/$arenaId': typeof AdminIngestArenaIdRoute
   '/api/public/hooks/cleanup-videos': typeof ApiPublicHooksCleanupVideosRoute
   '/api/public/ingest/replay': typeof ApiPublicIngestReplayRoute
 }
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/admin/infra': typeof AdminInfraRoute
   '/arena/$id': typeof ArenaIdRoute
   '/admin/arena/$id': typeof AdminArenaIdRoute
+  '/admin/ingest/$arenaId': typeof AdminIngestArenaIdRoute
   '/api/public/hooks/cleanup-videos': typeof ApiPublicHooksCleanupVideosRoute
   '/api/public/ingest/replay': typeof ApiPublicIngestReplayRoute
 }
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/admin/infra': typeof AdminInfraRoute
   '/arena/$id': typeof ArenaIdRoute
   '/admin/arena/$id': typeof AdminArenaIdRoute
+  '/admin/ingest/$arenaId': typeof AdminIngestArenaIdRoute
   '/api/public/hooks/cleanup-videos': typeof ApiPublicHooksCleanupVideosRoute
   '/api/public/ingest/replay': typeof ApiPublicIngestReplayRoute
 }
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/admin/infra'
     | '/arena/$id'
     | '/admin/arena/$id'
+    | '/admin/ingest/$arenaId'
     | '/api/public/hooks/cleanup-videos'
     | '/api/public/ingest/replay'
   fileRoutesByTo: FileRoutesByTo
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/admin/infra'
     | '/arena/$id'
     | '/admin/arena/$id'
+    | '/admin/ingest/$arenaId'
     | '/api/public/hooks/cleanup-videos'
     | '/api/public/ingest/replay'
   id:
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/admin/infra'
     | '/arena/$id'
     | '/admin/arena/$id'
+    | '/admin/ingest/$arenaId'
     | '/api/public/hooks/cleanup-videos'
     | '/api/public/ingest/replay'
   fileRoutesById: FileRoutesById
@@ -310,6 +322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminInfraRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/ingest/$arenaId': {
+      id: '/admin/ingest/$arenaId'
+      path: '/ingest/$arenaId'
+      fullPath: '/admin/ingest/$arenaId'
+      preLoaderRoute: typeof AdminIngestArenaIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/arena/$id': {
       id: '/admin/arena/$id'
       path: '/arena/$id'
@@ -337,11 +356,13 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminInfraRoute: typeof AdminInfraRoute
   AdminArenaIdRoute: typeof AdminArenaIdRoute
+  AdminIngestArenaIdRoute: typeof AdminIngestArenaIdRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminInfraRoute: AdminInfraRoute,
   AdminArenaIdRoute: AdminArenaIdRoute,
+  AdminIngestArenaIdRoute: AdminIngestArenaIdRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -364,3 +385,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
