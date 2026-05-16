@@ -12,6 +12,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { ArrowLeft, Cable, Camera as CameraIcon, Cpu, Loader2, Trash2, Wifi, WifiOff, Clock } from "lucide-react";
 
+async function notifyArena(arenaId: string, reason: "cameras.updated" | "boards.updated" | "buttons.updated") {
+  if (!arenaId) return;
+  try {
+    const { notifyArenaAgent } = await import("@/lib/agent-notify.functions");
+    await notifyArenaAgent({ data: { arenaId, reason } });
+  } catch {
+    /* fire-and-forget */
+  }
+}
+
 export const Route = createFileRoute("/admin/infra")({ component: GlobalInfraPage });
 
 interface ArenaRow { id: string; name: string; slug: string }
@@ -124,6 +134,7 @@ function CamerasGlobal({ arenas, cameras, onChange }:
     if (error) return toast.error(error.message);
     toast.success(`Câmera vinculada a ${arenaName(arenaId)}`);
     setName(""); setRtsp(""); onChange();
+    notifyArena(arenaId, "cameras.updated");
   }
 
   async function remove(c: CamRow) {
@@ -132,6 +143,7 @@ function CamerasGlobal({ arenas, cameras, onChange }:
     if (error) return toast.error(error.message);
     toast.success("Câmera removida");
     onChange();
+    notifyArena(c.arena_id, "cameras.updated");
   }
 
   return (
@@ -235,6 +247,7 @@ function BoardsGlobal({ arenas, boards, buttons, cameras, onChange }:
     if (error) return toast.error(error.message);
     toast.success("Placa cadastrada · 12 pinos (K1–K12) gerados automaticamente");
     setName(""); setSerial(""); onChange();
+    notifyArena(arenaId, "boards.updated");
   }
 
   async function remove(b: BoardRow) {
@@ -243,6 +256,7 @@ function BoardsGlobal({ arenas, boards, buttons, cameras, onChange }:
     if (error) return toast.error(error.message);
     toast.success("Placa removida");
     onChange();
+    notifyArena(b.arena_id, "boards.updated");
   }
 
   return (
@@ -333,6 +347,7 @@ function MappingGlobal({ arenas, boards, buttons, cameras, onChange }:
       toast.success("Pino liberado");
     }
     onChange();
+    notifyArena(arenaId, "buttons.updated");
   }
 
   const map = arenaPins

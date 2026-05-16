@@ -26,6 +26,7 @@ interface Arena {
   supabase_anon_key: string | null;
   videos_bucket: string | null;
   retention_days: number | null;
+  agent_webhook_url: string | null;
 }
 interface Sponsor { id: string; name: string; logo_url: string; link_url: string | null; display_order: number }
 interface CamRow { id: string; name: string; rtsp_url: string; button_id: string | null }
@@ -45,7 +46,7 @@ function ArenaDetailPage() {
     setLoadError(null);
     const { data: a, error: arenaError } = await supabase
       .from("arenas")
-      .select("id,name,slug,logo_url,primary_color,city,state,supabase_url,supabase_anon_key,videos_bucket,retention_days")
+      .select("id,name,slug,logo_url,primary_color,city,state,supabase_url,supabase_anon_key,videos_bucket,retention_days,agent_webhook_url")
       .eq("id", id).maybeSingle();
     if (arenaError) {
       setLoadError(arenaError.message);
@@ -165,6 +166,15 @@ function CourtsCard({ arenaId, cameras }: { arenaId: string; cameras: CamRow[] }
   }
   useEffect(() => { load(); }, [arenaId]);
 
+  async function notify(reason: "courts.updated" | "court_cameras.updated") {
+    try {
+      const { notifyArenaAgent } = await import("@/lib/agent-notify.functions");
+      await notifyArenaAgent({ data: { arenaId, reason } });
+    } catch {
+      /* fire-and-forget */
+    }
+  }
+
   async function add(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return toast.error("Informe o nome");
@@ -172,14 +182,14 @@ function CourtsCard({ arenaId, cameras }: { arenaId: string; cameras: CamRow[] }
     const { error } = await supabase.from("courts").insert({ arena_id: arenaId, name: name.trim() });
     setBusy(false);
     if (error) return toast.error(error.message);
-    setName(""); toast.success("Quadra criada"); load();
+    setName(""); toast.success("Quadra criada"); load(); notify("courts.updated");
   }
 
   async function remove(c: Court) {
     if (!confirm(`Remover quadra "${c.name}"? Isso também remove vínculos com câmeras.`)) return;
     const { error } = await supabase.from("courts").delete().eq("id", c.id);
     if (error) return toast.error(error.message);
-    load();
+    load(); notify("courts.updated");
   }
 
   async function rename(c: Court, newName: string) {
@@ -187,7 +197,7 @@ function CourtsCard({ arenaId, cameras }: { arenaId: string; cameras: CamRow[] }
     if (!n || n === c.name) return;
     const { error } = await supabase.from("courts").update({ name: n }).eq("id", c.id);
     if (error) return toast.error(error.message);
-    load();
+    load(); notify("courts.updated");
   }
 
   async function setCourtCamera(courtId: string, cameraId: string | null) {
@@ -198,7 +208,7 @@ function CourtsCard({ arenaId, cameras }: { arenaId: string; cameras: CamRow[] }
       });
       if (error) return toast.error(error.message);
     }
-    load();
+    load(); notify("court_cameras.updated");
   }
 
   return (
@@ -599,6 +609,8 @@ function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
   const [serviceKey, setServiceKey] = useState("");
   const [bucket, setBucket] = useState(arena.videos_bucket ?? "replays");
   const [retention, setRetention] = useState<string>(arena.retention_days?.toString() ?? "");
+  const [webhookUrl, setWebhookUrl] = useState(arena.agent_webhook_url ?? "");
+  const [webhookSecret, setWebhookSecret] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -607,6 +619,8 @@ function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
     setServiceKey("");
     setBucket(arena.videos_bucket ?? "replays");
     setRetention(arena.retention_days?.toString() ?? "");
+    setWebhookUrl(arena.agent_webhook_url ?? "");
+    setWebhookSecret("");
   }, [arena.id]);
 
   async function save() {
@@ -622,10 +636,13 @@ function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
           supabase_service_key: serviceKey.trim() || undefined,
           videos_bucket: bucket.trim() || null,
           retention_days: days,
+          agent_webhook_url: webhookUrl.trim() || null,
+          agent_webhook_secret: webhookSecret.trim() || undefined,
         },
       });
       toast.success("Conexão salva");
       setServiceKey("");
+      setWebhookSecret("");
       onSaved();
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao salvar");
@@ -675,6 +692,34 @@ function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
           />
         </div>
       </div>
+
+      <div className="mt-6 border-t border-border pt-4">
+        <h3 className="mb-1 text-base font-semibold">Webhook do Agente</h3>
+        <p className="mb-3 text-sm text-muted-foreground">
+          URL HTTPS do agente da arena que deve ser avisado quando a configuração mudar (quadras,
+          câmeras, placas, botões). Se vazio, o agente continua revalidando a config a cada ~60s.
+        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <Label>URL do webhook</Label>
+            <Input
+              placeholder="https://arena-x.exemplo.com/agent/reload"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label>Segredo (HMAC, somente servidor)</Label>
+            <Input
+              type="password"
+              placeholder={arena.agent_webhook_url ? "•••••• (deixe em branco para manter)" : "segredo compartilhado"}
+              value={webhookSecret}
+              onChange={(e) => setWebhookSecret(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
       <div className="mt-4">
         <Button onClick={save} disabled={busy}>{busy ? "Salvando..." : "Salvar conexão"}</Button>
       </div>

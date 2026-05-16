@@ -1,77 +1,78 @@
-# Plano: Replays direto do Supabase externo (Opção B)
+## Objetivo
 
-O agente continua gravando o MP4 e o registro no Supabase **externo** de cada arena (`htirxluqufyexmpuhhbt`, tabela `replays`, bucket `replays`). A Home da plataforma deixa de ler `global_replays` do banco central e passa a consultar **N bancos externos em paralelo**, agregando e ouvindo Realtime em cada um.
+Fazer o frontend avisar o agente da arena sempre que houver mudança em **arenas, quadras, câmeras, placas zero‑delay, botões ou vínculos quadra↔câmera**, para o agente recarregar o `/api/public/agent/config` imediatamente e gerar vídeos já mapeados nos IDs corretos.
 
-## Pré-requisito no Supabase externo (você roda 1x por arena)
+## Abordagem (duas camadas, complementares)
 
-Como a RLS provavelmente não permite leitura anônima, eu vou te entregar o SQL para colar no SQL Editor do Supabase externo:
+1. **Push (instantâneo) via webhook** — cada arena cadastra a URL HTTP do seu agente; o backend Lovable envia um POST de invalidação sempre que algo muda.
+2. **Pull (fallback) por versão** — o endpoint `/api/public/agent/config` passa a retornar `config_version` (timestamp/inteiro). O agente já revalida a cada 60s e compara versão — se mudou, recarrega.
 
-```sql
-alter table public.replays enable row level security;
-create policy "replays_public_read"
-  on public.replays for select
-  to anon, authenticated
-  using (true);
+Assim, mesmo se o webhook falhar (rede do clube, agente offline no momento), na próxima revalidação o agente pega a config nova sozinho.
 
--- Realtime
-alter publication supabase_realtime add table public.replays;
-alter table public.replays replica identity full;
+## Mudanças no banco
 
--- Bucket público (se ainda não estiver)
-update storage.buckets set public = true where id = 'replays';
+Tabela `arenas` — adicionar:
+- `agent_webhook_url text` (URL HTTPS do agente, ex.: `https://arena-x.local:8443/agent/reload` ou um túnel)
+- `agent_webhook_secret text` (segredo p/ HMAC do payload)
+- `config_version bigint not null default 1`
+
+Trigger `bump_arena_config_version()` que incrementa `arenas.config_version` e atualiza `updated_at` sempre que houver INSERT/UPDATE/DELETE em:
+`courts`, `cameras`, `court_cameras`, `arena_buttons`, `zero_delay_boards`, e em colunas relevantes de `arenas` (nome, slug, bucket, retention, supabase_*).
+
+## Backend (TanStack Start)
+
+1. `src/lib/agent-notify.server.ts` — helper `notifyAgent(arenaId, reason)`:
+   - lê `agent_webhook_url`, `agent_webhook_secret`, `config_version` da arena;
+   - envia POST JSON `{ arena_id, reason, config_version, ts }` com header `X-Agent-Signature: sha256=<hmac>`;
+   - timeout 3s, 2 retries com backoff; falhas viram log (não bloqueia UI — o pull cobre).
+
+2. Server fn `notifyArenaAgent` (`src/lib/agent-notify.functions.ts`) com `requireSupabaseAuth` + checagem `is_arena_admin || superadmin`. Chamada pelo frontend após cada save de:
+   - criar/renomear/excluir quadra
+   - criar/editar/excluir câmera
+   - vincular/desvincular câmera↔botão
+   - vincular/desvincular quadra↔câmera
+   - criar/excluir placa ARC‑968
+   - editar conexão da arena (já existe em `updateArenaConnection` — chamar `notifyArenaAgent` no fim)
+
+3. `src/routes/api/public/agent.config.ts` — passar a incluir `config_version` no JSON de resposta.
+
+4. Novo campo no admin (página de gerenciamento da arena, aba **Conexão**): inputs para `agent_webhook_url` e `agent_webhook_secret` (este último write‑only, salvo via `updateArenaConnection`).
+
+## Frontend
+
+- `src/routes/admin.arena.$id.tsx`
+  - Aba **Conexão**: campos para URL e segredo do webhook do agente.
+  - Aba **Quadras** (`CourtsCard`): após `add/remove/rename/setCourtCamera` → `notifyArenaAgent({ arenaId, reason })`.
+  - Aba **Câmeras**: após qualquer mutação → `notifyArenaAgent`.
+  - Aba **Placas/Botões**: idem.
+
+Helper único `useNotifyAgent(arenaId)` para não repetir código.
+
+## Contrato do webhook (documentar no prompt do Antigravity)
+
+```
+POST {agent_webhook_url}
+Headers:
+  Content-Type: application/json
+  X-Agent-Signature: sha256=<hex hmac do body com agent_webhook_secret>
+Body:
+  { "arena_id": "...", "reason": "courts.updated", "config_version": 42, "ts": "2026-..." }
+Resposta esperada: 2xx (agente dispara reload do /agent/config).
 ```
 
-Sem isso, a anon key não enxerga nada e o carrossel continua vazio.
+Razões padronizadas: `arena.updated`, `courts.updated`, `cameras.updated`, `court_cameras.updated`, `boards.updated`, `buttons.updated`.
 
-## Mudanças no código (plataforma)
+## Critério de aceite
 
-1. **`src/lib/arena-client.ts`** (já existe parcialmente): factory `getArenaSupabase(url, anonKey)` que cacheia um client por arena. Sem persistência de sessão (anon-only).
+- Cadastrar uma quadra nova → em ≤2s o agente recarrega config; próximo replay já sai com `court_id` correto e `court_name` aparecendo no carrossel.
+- Sem webhook configurado (ou agente offline): em ≤60s o pull pega `config_version` nova e recarrega.
+- Erros de webhook ficam só no log; o admin não vê falha de UI.
 
-2. **Novo hook `src/hooks/use-global-replays.ts`**:
-   - Server function `listArenasWithEndpoint()` retorna `[{ id, name, slug, primary_color, logo_url, supabase_url, supabase_anon_key }]` das arenas `active=true` que tenham `supabase_url` e `supabase_anon_key` preenchidos.
-   - No cliente, para cada arena: `client.from('replays').select('id, quadra_id, video_url, thumb_url, created_at').order('created_at', { ascending: false }).limit(20)`.
-   - Junta todas as listas, ordena por `created_at desc`, retorna top N (ex.: 30).
-   - Para cada arena, abre um canal Realtime `replays-{arenaId}` em `postgres_changes` (INSERT em `public.replays`); ao receber, faz prepend do novo item com os metadados da arena e mantém o array ordenado.
+## Arquivos a criar/editar
 
-3. **`src/routes/index.tsx`**: troca a query atual de `global_replays` pelo hook acima. Mantém:
-   - `.slice(0, 3)` para o carrossel.
-   - `formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: ptBR })` (UTC → local).
-   - Quando `arena_logo_url`/`primary_color` faltarem, usa fallback do registro da arena.
-
-4. **Endpoint público que o agente já espera (`/api/public/agent/config`)**: nada muda aqui — continua servindo `supabase_url`, `supabase_service_key` etc. para o agente seguir gravando no externo.
-
-5. **Limpeza**: `global_replays`, trigger `sync_global_replay` e o endpoint `/api/public/ingest/replay` ficam **inativos mas preservados** (podem ser reusados depois para fallback/analytics). Não vou apagar nada nesta passagem.
-
-## Trade-offs aceitos (importante)
-
-- A `supabase_anon_key` da arena vai para o **navegador**. Anon key é desenhada para isso, mas exige que a RLS do externo libere apenas `SELECT` no que pode ser público (ex.: `replays`, talvez `quadras`). **Não habilite** policy pública em tabelas sensíveis (usuários, tokens, etc.).
-- Cada arena ativa = 1 conexão Realtime no navegador. Com 20+ arenas isso pesa; nesse caso a gente migra para C (POST leve no central) depois.
-- Latência do feed = latência do banco externo mais lento.
-
-## Esquema visual
-
-```text
-Botão físico ─▶ agente (mini-PC) ─▶ Supabase externo da arena
-                                        │
-                                        ▼
-                              tabela replays (INSERT)
-                                        │
-                                        ▼  Realtime
-        Plataforma (Home) ◀── canal por arena, agrega top 30
-```
-
-## Detalhes técnicos
-
-- Server fn `listArenasWithEndpoint` usa `supabaseAdmin` (server-side) e devolve a `anon_key` — OK porque é publishable.
-- O query no externo seleciona só colunas existentes: `id, quadra_id, video_url, thumb_url, created_at`. Sem `title`, `arena_*` — esses campos vêm da arena conhecida no frontend.
-- Realtime channel: `channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'replays' }, handler).subscribe()`.
-- `video_url` no externo é caminho dentro do bucket `replays`; o frontend monta a URL pública via `client.storage.from('replays').getPublicUrl(path)` se não vier URL absoluta.
-
-## Entregáveis nesta implementação
-
-- SQL para você rodar no Supabase externo (ver acima).
-- `src/lib/arena-client.ts` ajustado.
-- `src/hooks/use-global-replays.ts` novo.
-- `src/routes/index.tsx` consumindo o hook, com Realtime e tempo local.
-
-Aprova para eu implementar?
+- migration: colunas + trigger + função `bump_arena_config_version`
+- novo: `src/lib/agent-notify.server.ts`, `src/lib/agent-notify.functions.ts`
+- editar: `src/routes/api/public/agent.config.ts` (incluir `config_version`)
+- editar: `src/lib/arena-admin.functions.ts` (chamar notify em `updateArenaConnection`, adicionar campos webhook)
+- editar: `src/routes/admin.arena.$id.tsx` (campos webhook + chamadas notify nas abas)
+- atualizar: `/mnt/documents/antigravity-prompt.md` com o contrato do webhook + revalidação por `config_version`

@@ -47,7 +47,7 @@ export const Route = createFileRoute('/api/public/agent/config')({
         const [arenaRes, camerasRes, buttonsRes, boardsRes, courtsRes, courtCamerasRes] = await Promise.all([
           supabaseAdmin
             .from('arenas')
-            .select('id, name, slug, active, videos_bucket, retention_days, supabase_url, supabase_anon_key, supabase_service_key')
+            .select('id, name, slug, active, videos_bucket, retention_days, supabase_url, supabase_anon_key, supabase_service_key, config_version')
             .eq('id', arenaId)
             .maybeSingle(),
           supabaseAdmin
@@ -84,6 +84,7 @@ export const Route = createFileRoute('/api/public/agent/config')({
           JSON.stringify({
             ok: true,
             generated_at: new Date().toISOString(),
+            config_version: (arenaRes.data as any).config_version ?? 0,
             arena: arenaRes.data,
             cameras: camerasRes.data ?? [],
             buttons: buttonsRes.data ?? [],
