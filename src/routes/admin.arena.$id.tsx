@@ -107,14 +107,19 @@ function ArenaDetailPage() {
         </Card>
       )}
 
-      <Tabs defaultValue="cameras" className="w-full">
+      <Tabs defaultValue="quadras" className="w-full">
         <TabsList className="mb-4 flex flex-wrap">
+          <TabsTrigger value="quadras">Quadras</TabsTrigger>
           <TabsTrigger value="cameras">Câmeras</TabsTrigger>
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
           <TabsTrigger value="patrocinadores">Patrocinadores</TabsTrigger>
           <TabsTrigger value="whitelabel">White Label</TabsTrigger>
           <TabsTrigger value="conexao">Conexão</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="quadras">
+          <CourtsCard arenaId={id} cameras={cameras} />
+        </TabsContent>
 
         <TabsContent value="cameras">
           <CamerasReadOnly cameras={cameras} />
