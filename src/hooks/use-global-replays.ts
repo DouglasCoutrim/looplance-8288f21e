@@ -34,6 +34,9 @@ const GLOBAL_LIMIT = 60;
 function rowToReplay(row: ReplayRow, arena: ArenaEndpoint): GlobalReplay {
   const created = row.created_at ?? new Date().toISOString();
   const d = new Date(created);
+  const court = row.quadra_id
+    ? arena.courts.find((c) => c.id === row.quadra_id) ?? null
+    : null;
   return {
     id: `${arena.id}:${row.id}`,
     arena_id: arena.id,
@@ -42,8 +45,8 @@ function rowToReplay(row: ReplayRow, arena: ArenaEndpoint): GlobalReplay {
     arena_primary_color: arena.primary_color,
     arena_logo_url: arena.logo_url,
     court_id: row.quadra_id,
-    court_name: null,
-    title: null,
+    court_name: court?.name ?? null,
+    title: court?.name ?? arena.name,
     video_url: row.video_url,
     thumbnail_url: row.thumb_url,
     data_evento: d.toISOString().slice(0, 10),
