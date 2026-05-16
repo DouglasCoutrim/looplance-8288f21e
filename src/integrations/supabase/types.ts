@@ -193,7 +193,10 @@ export type Database = {
       arenas: {
         Row: {
           active: boolean
+          agent_webhook_secret: string | null
+          agent_webhook_url: string | null
           city: string | null
+          config_version: number
           created_at: string
           id: string
           logo_url: string | null
@@ -210,7 +213,10 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          agent_webhook_secret?: string | null
+          agent_webhook_url?: string | null
           city?: string | null
+          config_version?: number
           created_at?: string
           id?: string
           logo_url?: string | null
@@ -227,7 +233,10 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          agent_webhook_secret?: string | null
+          agent_webhook_url?: string | null
           city?: string | null
+          config_version?: number
           created_at?: string
           id?: string
           logo_url?: string | null
