@@ -75,9 +75,9 @@ function IngestTokensPage() {
   }
 
   useEffect(() => {
-    if (user) load();
+    if (!loading && user) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, arenaId, isSuperAdmin]);
+  }, [loading, user, arenaId, isSuperAdmin]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
