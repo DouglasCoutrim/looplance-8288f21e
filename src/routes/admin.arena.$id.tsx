@@ -138,8 +138,9 @@ function ArenaDetailPage() {
           <WhiteLabelCard arena={arena} onSaved={load} />
         </TabsContent>
 
-        <TabsContent value="conexao">
+        <TabsContent value="conexao" className="space-y-6">
           <ConnectionCard arena={arena} onSaved={load} />
+          <AgentTokensCard arenaId={arena.id} />
         </TabsContent>
       </Tabs>
     </AppShell>
