@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { arenaId, bucket, prefix } = await req.json()
+    const { arenaId, type, bucket, prefix } = await req.json()
     
     if (!arenaId) {
       throw new Error('arenaId is required')
@@ -43,40 +43,72 @@ serve(async (req) => {
     // Initialize external Supabase client
     const externalClient = createClient(arena.supabase_url, arena.supabase_anon_key)
 
-    const bucketName = bucket || 'replays'
-    const folder = prefix || ''
+    if (type === 'videos') {
+      // Query videos table
+      const sel = "id,video_url,thumbnail_url,created_at,court_id";
+      
+      // Try with arena_id filter first
+      let { data, error } = await externalClient
+        .from("videos")
+        .select(sel)
+        .eq("arena_id", arenaId)
+        .order("created_at", { ascending: false })
+        .limit(500);
 
-    // List files
-    const { data: files, error: listError } = await externalClient.storage
-      .from(bucketName)
-      .list(folder || undefined, {
-        limit: 200,
-        sortBy: { column: 'created_at', order: 'desc' },
-      })
-
-    if (listError) {
-      console.error('Error listing storage:', listError)
-      throw listError
-    }
-
-    // Map files to include public URLs
-    const videos = (files ?? [])
-      .filter((f) => f.name && !f.name.endsWith('/') && /\.(mp4|mov|webm|mkv|m4v)$/i.test(f.name))
-      .map((f) => {
-        const fullPath = folder ? `${folder}/${f.name}` : f.name
-        const { data: { publicUrl } } = externalClient.storage.from(bucketName).getPublicUrl(fullPath)
-        
-        return {
-          name: f.name,
-          url: publicUrl,
-          createdAt: f.created_at || f.updated_at || null,
-          size: f.metadata?.size || null,
+      // Fallback if error or no data (legacy schema)
+      if (error || !(data ?? []).length) {
+        const fallback = await externalClient
+          .from("videos")
+          .select(sel)
+          .order("created_at", { ascending: false })
+          .limit(500);
+        if (!fallback.error) {
+          data = fallback.data;
+        } else {
+          throw fallback.error;
         }
-      })
+      }
 
-    return new Response(JSON.stringify({ videos }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+      return new Response(JSON.stringify({ videos: data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    } else {
+      // Default: type === 'bucket'
+      const bucketName = bucket || 'replays'
+      const folder = prefix || ''
+
+      // List files
+      const { data: files, error: listError } = await externalClient.storage
+        .from(bucketName)
+        .list(folder || undefined, {
+          limit: 200,
+          sortBy: { column: 'created_at', order: 'desc' },
+        })
+
+      if (listError) {
+        console.error('Error listing storage:', listError)
+        throw listError
+      }
+
+      // Map files to include public URLs
+      const videos = (files ?? [])
+        .filter((f) => f.name && !f.name.endsWith('/') && /\.(mp4|mov|webm|mkv|m4v)$/i.test(f.name))
+        .map((f) => {
+          const fullPath = folder ? `${folder}/${f.name}` : f.name
+          const { data: { publicUrl } } = externalClient.storage.from(bucketName).getPublicUrl(fullPath)
+          
+          return {
+            name: f.name,
+            url: publicUrl,
+            createdAt: f.created_at || f.updated_at || null,
+            size: f.metadata?.size || null,
+          }
+        })
+
+      return new Response(JSON.stringify({ videos }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
   } catch (error) {
     console.error('Function error:', error)
     return new Response(JSON.stringify({ error: error.message }), {
