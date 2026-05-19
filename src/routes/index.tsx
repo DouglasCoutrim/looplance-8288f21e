@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { resolveReplayUrl } from "@/lib/replays";
 import { useGlobalReplays } from "@/hooks/use-global-replays";
-import { useTopReplays } from "@/hooks/use-top-replays";
+
 import logoFull from "@/assets/logo-full.png";
 import { ChevronRight, Flame, Loader2, MapPin, Radio, Search, User as UserIcon } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
@@ -41,7 +41,8 @@ function Home() {
   const { user } = useAuth();
   const [arenas, setArenas] = useState<Arena[]>([]);
   const { replays } = useGlobalReplays();
-  const { replays: topReplays, loading: topLoading } = useTopReplays();
+  const topReplays = useMemo(() => replays.slice(0, 5), [replays]);
+  const topLoading = loading;
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterState, setFilterState] = useState<string>("all");
@@ -147,7 +148,7 @@ function Home() {
                 className="relative w-full"
               >
                 <CarouselContent>
-                  {topReplays.map((r) => (
+                  {topReplays.map((r: any) => (
                     <CarouselItem key={r.id} className="basis-full">
                       <button
                         onClick={() => navigate({ to: "/arena/$id", params: { id: r.arena_id } })}
@@ -188,7 +189,7 @@ function Home() {
 
               {topReplays.length > 1 && (
                 <div className="flex items-center justify-center gap-1.5">
-                  {topReplays.map((r, i) => (
+                  {topReplays.map((r: any, i: number) => (
                     <button
                       key={r.id}
                       onClick={() => carouselApi?.scrollTo(i)}
