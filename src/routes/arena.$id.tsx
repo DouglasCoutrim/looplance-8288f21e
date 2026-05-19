@@ -71,26 +71,31 @@ function ArenaDashboard() {
       setQuadras(((q ?? []) as { id: string; name: string }[]).map((court) => ({ id: court.id, nome: court.name })));
 
       const useExternal = Boolean(arena.supabase_url && arena.supabase_anon_key);
-      const db = useExternal
-        ? getArenaClient(arena.supabase_url!, arena.supabase_anon_key!)
-        : supabase;
-
-      // External pipeline schema may differ — try arena_id filter first, fall back to no filter.
-      let rows: { id: string; video_url: string; thumbnail_url: string | null; created_at: string; court_id: string | null }[] = [];
-      const sel = "id,video_url,thumbnail_url,created_at,court_id";
-      const tryQ = async (withArena: boolean) => {
-        const builder = db.from("videos").select(sel).order("created_at", { ascending: false }).limit(500);
-        const { data, error } = withArena ? await builder.eq("arena_id", arena.id) : await builder;
-        return { data, error };
-      };
-      let res = await tryQ(!useExternal);
-      if (useExternal && (res.error || !(res.data ?? []).length)) {
-        const fallback = await tryQ(false);
-        if (!fallback.error) res = fallback;
+      
+      let rows: any[] = [];
+      
+      try {
+        if (useExternal) {
+          const { data, error } = await supabase.functions.invoke("list-arena-videos", {
+            body: { arenaId: arena.id, type: "videos" },
+          });
+          if (error) throw error;
+          rows = data?.videos || [];
+        } else {
+          const { data, error } = await supabase.from("videos")
+            .select("id,video_url,thumbnail_url,created_at,court_id")
+            .eq("arena_id", arena.id)
+            .order("created_at", { ascending: false })
+            .limit(500);
+          if (error) throw error;
+          rows = data || [];
+        }
+      } catch (err) {
+        console.error("Erro ao carregar vídeos:", err);
+        toast.error("Não foi possível carregar os lances recentes.");
       }
-      rows = (res.data ?? []) as typeof rows;
 
-      const rs = rows.map((video) => ({
+      const rs = rows.map((video: any) => ({
         id: video.id,
         video_url: video.video_url,
         thumbnail_url: video.thumbnail_url,
