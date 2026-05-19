@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Loader2, MapPin, PlayCircle, Scissors, Radio, Star, RotateCcw, RotateCw } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, PlayCircle, Radio, Star, RotateCcw, RotateCw, Download } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -29,7 +29,6 @@ interface PublicArena {
   id: string; slug: string; name: string;
   logo_url: string | null; primary_color: string;
   city: string | null; state: string | null;
-  supabase_url: string | null; supabase_anon_key: string | null;
 }
 interface Quadra { id: string; nome: string }
 interface Replay {
@@ -70,26 +69,16 @@ function ArenaDashboard() {
       const { data: q } = await supabase.from("courts").select("id,name").eq("arena_id", arena.id).order("name");
       setQuadras(((q ?? []) as { id: string; name: string }[]).map((court) => ({ id: court.id, nome: court.name })));
 
-      const useExternal = Boolean(arena.supabase_url && arena.supabase_anon_key);
-      
       let rows: any[] = [];
       
       try {
-        if (useExternal) {
-          const { data, error } = await supabase.functions.invoke("list-arena-videos", {
-            body: { arenaId: arena.id, type: "videos" },
-          });
-          if (error) throw error;
-          rows = data?.videos || [];
-        } else {
-          const { data, error } = await supabase.from("videos")
-            .select("id,video_url,thumbnail_url,created_at,court_id")
-            .eq("arena_id", arena.id)
-            .order("created_at", { ascending: false })
-            .limit(500);
-          if (error) throw error;
-          rows = data || [];
-        }
+        const { data, error } = await supabase.from("videos")
+          .select("id,video_url,created_at,court_id")
+          .eq("arena_id", arena.id)
+          .order("created_at", { ascending: false })
+          .limit(500);
+        if (error) throw error;
+        rows = data || [];
       } catch (err) {
         console.error("Erro ao carregar vídeos:", err);
         toast.error("Não foi possível carregar os lances recentes.");
@@ -100,7 +89,7 @@ function ArenaDashboard() {
         return {
           id: video.id,
           video_url: video.video_url,
-          thumbnail_url: video.thumbnail_url,
+          thumbnail_url: null,
           data_evento: format(date, "yyyy-MM-dd"),
           hora_evento: date.toLocaleTimeString("pt-BR", {
             timeZone: "America/Sao_Paulo",
@@ -115,7 +104,7 @@ function ArenaDashboard() {
       setReplays(rs);
       setSelected(rs[0] ?? null);
     })();
-  }, [arena?.id, arena?.supabase_url, arena?.supabase_anon_key]);
+  }, [arena?.id]);
 
   useEffect(() => {
     if (!user || !arena) return;
@@ -252,16 +241,7 @@ function ArenaDashboard() {
             <TabsList>
               <TabsTrigger value="recent">Por horário</TabsTrigger>
               <TabsTrigger value="court">Por quadra</TabsTrigger>
-              <TabsTrigger value="bucket">Bucket</TabsTrigger>
             </TabsList>
-
-            <TabsContent value="bucket" className="mt-4">
-              <BucketVideoFeed
-                arenaId={arena.id}
-                bucket="replays"
-                brand={brand}
-              />
-            </TabsContent>
 
             <TabsContent value="recent" className="mt-4 space-y-6">
               {grouped.length === 0 && <EmptyVideos />}
@@ -304,15 +284,7 @@ function ArenaDashboard() {
 
       <BottomNav />
 
-      {editing && (
-        <ReplayEditor
-          replay={editing}
-          arena={arena}
-          brand={brand}
-          user={user}
-          onClose={() => setEditing(null)}
-        />
-      )}
+      {/* ReplayEditor removido conforme nova abordagem simplificada */}
     </div>
   );
 }
@@ -367,8 +339,6 @@ function PlayerWithControls({
               <RotateCcw className="h-4 w-4" />
               <span className="sr-only">-5s</span>
             </button>
-            <span className="grid place-items-center text-[10px] font-bold text-white/60">-5s</span>
-            <span className="grid place-items-center text-[10px] font-bold text-white/60">+15s</span>
             <button
               onClick={() => nudge(15)}
               className="grid h-10 w-10 place-items-center rounded-full border border-white/20 text-white transition hover:bg-white/10"
@@ -377,13 +347,14 @@ function PlayerWithControls({
               <RotateCw className="h-4 w-4" />
             </button>
           </div>
-          <button
-            onClick={onEdit}
-            style={{ backgroundColor: brand, color: "#fff" }}
+          <a
+            href={resolveReplayUrl(selected.video_url)}
+            download
             className="flex items-center gap-1 rounded-full px-4 py-2 text-sm font-extrabold shadow-lg transition active:scale-95"
+            style={{ backgroundColor: brand, color: "#fff" }}
           >
-            <Scissors className="h-4 w-4" /> Editar
-          </button>
+            <Download className="h-4 w-4" /> Download
+          </a>
         </div>
       )}
       {selected && (
