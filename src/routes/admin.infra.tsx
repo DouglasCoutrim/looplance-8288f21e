@@ -80,7 +80,7 @@ function GlobalInfraPage() {
           <TabsTrigger value="cameras"><CameraIcon className="mr-2 h-4 w-4" />Câmeras</TabsTrigger>
           <TabsTrigger value="boards"><Cpu className="mr-2 h-4 w-4" />Placas ARC-968</TabsTrigger>
           <TabsTrigger value="mapping"><Cable className="mr-2 h-4 w-4" />Mapeamento Pino → Câmera</TabsTrigger>
-          <TabsTrigger value="retencao"><Clock className="mr-2 h-4 w-4" />Retenção de Vídeos</TabsTrigger>
+          <TabsTrigger value="retencao"><Clock className="mr-2 h-4 w-4" />Limpeza</TabsTrigger>
         </TabsList>
 
         <TabsContent value="cameras">
