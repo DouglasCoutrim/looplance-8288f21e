@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { resolveReplayUrl } from "@/lib/replays";
 import { useGlobalReplays } from "@/hooks/use-global-replays";
-import { useTopReplays } from "@/hooks/use-top-replays";
+
 import logoFull from "@/assets/logo-full.png";
 import { ChevronRight, Flame, Loader2, MapPin, Radio, Search, User as UserIcon } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
@@ -40,9 +40,10 @@ function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [arenas, setArenas] = useState<Arena[]>([]);
-  const { replays } = useGlobalReplays();
-  const { replays: topReplays, loading: topLoading } = useTopReplays();
   const [loading, setLoading] = useState(true);
+  const { replays, loading: replaysLoading } = useGlobalReplays();
+  const topReplays = useMemo(() => replays.slice(0, 5), [replays]);
+  const topLoading = replaysLoading;
   const [search, setSearch] = useState("");
   const [filterState, setFilterState] = useState<string>("all");
   const [filterCity, setFilterCity] = useState<string>("all");
@@ -64,6 +65,7 @@ function Home() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      setLoading(true);
       const aRes = await supabase.from("public_arenas" as never).select("*");
       if (!cancelled && aRes.data) setArenas(aRes.data as Arena[]);
       if (!cancelled) setLoading(false);
@@ -147,7 +149,7 @@ function Home() {
                 className="relative w-full"
               >
                 <CarouselContent>
-                  {topReplays.map((r) => (
+                  {topReplays.map((r: any) => (
                     <CarouselItem key={r.id} className="basis-full">
                       <button
                         onClick={() => navigate({ to: "/arena/$id", params: { id: r.arena_id } })}
@@ -188,7 +190,7 @@ function Home() {
 
               {topReplays.length > 1 && (
                 <div className="flex items-center justify-center gap-1.5">
-                  {topReplays.map((r, i) => (
+                  {topReplays.map((r: any, i: number) => (
                     <button
                       key={r.id}
                       onClick={() => carouselApi?.scrollTo(i)}

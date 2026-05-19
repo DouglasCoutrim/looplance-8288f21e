@@ -22,11 +22,7 @@ interface Arena {
   primary_color: string;
   city: string | null;
   state: string | null;
-  supabase_url: string | null;
-  supabase_anon_key: string | null;
-  videos_bucket: string | null;
   retention_days: number | null;
-  agent_webhook_url: string | null;
 }
 interface Sponsor { id: string; name: string; logo_url: string; link_url: string | null; display_order: number }
 interface CamRow { id: string; name: string; rtsp_url: string; button_id: string | null }
@@ -46,7 +42,7 @@ function ArenaDetailPage() {
     setLoadError(null);
     const { data: a, error: arenaError } = await supabase
       .from("arenas")
-      .select("id,name,slug,logo_url,primary_color,city,state,supabase_url,supabase_anon_key,videos_bucket,retention_days,agent_webhook_url")
+      .select("id,name,slug,logo_url,primary_color,city,state,retention_days")
       .eq("id", id).maybeSingle();
     if (arenaError) {
       setLoadError(arenaError.message);
@@ -115,7 +111,7 @@ function ArenaDetailPage() {
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
           <TabsTrigger value="patrocinadores">Patrocinadores</TabsTrigger>
           <TabsTrigger value="whitelabel">White Label</TabsTrigger>
-          <TabsTrigger value="conexao">Conexão</TabsTrigger>
+          <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
         </TabsList>
 
         <TabsContent value="quadras">
@@ -138,9 +134,8 @@ function ArenaDetailPage() {
           <WhiteLabelCard arena={arena} onSaved={load} />
         </TabsContent>
 
-        <TabsContent value="conexao" className="space-y-6">
-          <ConnectionCard arena={arena} onSaved={load} />
-          <AgentTokensCard arenaId={arena.id} />
+        <TabsContent value="configuracoes" className="space-y-6">
+          <ConfiguracoesCard arena={arena} onSaved={load} />
         </TabsContent>
       </Tabs>
     </AppShell>
@@ -604,49 +599,24 @@ function WhiteLabelCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
 
 /* ----------------------------- Conexão de dados ----------------------------- */
 
-function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void }) {
-  const [url, setUrl] = useState(arena.supabase_url ?? "");
-  const [anon, setAnon] = useState(arena.supabase_anon_key ?? "");
-  const [serviceKey, setServiceKey] = useState("");
-  const [bucket, setBucket] = useState(arena.videos_bucket ?? "replays");
-  const [retention, setRetention] = useState<string>(arena.retention_days?.toString() ?? "");
-  const [webhookUrl, setWebhookUrl] = useState(arena.agent_webhook_url ?? "");
-  const [webhookSecret, setWebhookSecret] = useState("");
+function ConfiguracoesCard({ arena, onSaved }: { arena: Arena; onSaved: () => void }) {
+  const [retention, setRetention] = useState(arena.retention_days?.toString() || "");
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    setUrl(arena.supabase_url ?? "");
-    setAnon(arena.supabase_anon_key ?? "");
-    setServiceKey("");
-    setBucket(arena.videos_bucket ?? "replays");
-    setRetention(arena.retention_days?.toString() ?? "");
-    setWebhookUrl(arena.agent_webhook_url ?? "");
-    setWebhookSecret("");
-  }, [arena.id]);
 
   async function save() {
     setBusy(true);
     try {
       const { updateArenaConnection } = await import("@/lib/arena-admin.functions");
-      const days = retention.trim() ? parseInt(retention, 10) : null;
       await updateArenaConnection({
         data: {
           arenaId: arena.id,
-          supabase_url: url.trim() || null,
-          supabase_anon_key: anon.trim() || null,
-          supabase_service_key: serviceKey.trim() || undefined,
-          videos_bucket: bucket.trim() || null,
-          retention_days: days,
-          agent_webhook_url: webhookUrl.trim() || null,
-          agent_webhook_secret: webhookSecret.trim() || undefined,
+          retention_days: retention ? parseInt(retention) : null,
         },
       });
-      toast.success("Conexão salva");
-      setServiceKey("");
-      setWebhookSecret("");
+      toast.success("Configurações atualizadas");
       onSaved();
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha ao salvar");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Falha ao salvar");
     } finally {
       setBusy(false);
     }
@@ -654,33 +624,11 @@ function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
 
   return (
     <Card className="p-6">
-      <h2 className="mb-1 text-lg font-semibold">Conexão com Supabase da arena</h2>
+      <h2 className="mb-1 text-lg font-semibold">Configurações da arena</h2>
       <p className="mb-4 text-sm text-muted-foreground">
-        Cada arena pode ter o próprio projeto Supabase com bucket de vídeos. A <strong>service key</strong>
-        é usada apenas no servidor (limpeza por retenção) e nunca é exposta ao navegador.
+        Gerencie retenção de dados e outras configurações locais da arena.
       </p>
       <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          <Label>Supabase URL</Label>
-          <Input placeholder="https://xxxx.supabase.co" value={url} onChange={(e) => setUrl(e.target.value)} />
-        </div>
-        <div>
-          <Label>Anon key</Label>
-          <Input placeholder="eyJhbGciOi..." value={anon} onChange={(e) => setAnon(e.target.value)} />
-        </div>
-        <div>
-          <Label>Service key (somente servidor)</Label>
-          <Input
-            type="password"
-            placeholder={arena.supabase_url ? "•••••• (deixe em branco para manter)" : "eyJhbGciOi..."}
-            value={serviceKey}
-            onChange={(e) => setServiceKey(e.target.value)}
-          />
-        </div>
-        <div>
-          <Label>Bucket de vídeos</Label>
-          <Input placeholder="replays" value={bucket} onChange={(e) => setBucket(e.target.value)} />
-        </div>
         <div>
           <Label>Dias de retenção (opcional, sobrescreve global)</Label>
           <Input
@@ -694,35 +642,8 @@ function ConnectionCard({ arena, onSaved }: { arena: Arena; onSaved: () => void 
         </div>
       </div>
 
-      <div className="mt-6 border-t border-border pt-4">
-        <h3 className="mb-1 text-base font-semibold">Webhook do Agente</h3>
-        <p className="mb-3 text-sm text-muted-foreground">
-          URL HTTPS do agente da arena que deve ser avisado quando a configuração mudar (quadras,
-          câmeras, placas, botões). Se vazio, o agente continua revalidando a config a cada ~60s.
-        </p>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <Label>URL do webhook</Label>
-            <Input
-              placeholder="https://arena-x.exemplo.com/agent/reload"
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>Segredo (HMAC, somente servidor)</Label>
-            <Input
-              type="password"
-              placeholder={arena.agent_webhook_url ? "•••••• (deixe em branco para manter)" : "segredo compartilhado"}
-              value={webhookSecret}
-              onChange={(e) => setWebhookSecret(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4">
-        <Button onClick={save} disabled={busy}>{busy ? "Salvando..." : "Salvar conexão"}</Button>
+      <div className="mt-6">
+        <Button onClick={save} disabled={busy}>{busy ? "Salvando..." : "Salvar configurações"}</Button>
       </div>
     </Card>
   );

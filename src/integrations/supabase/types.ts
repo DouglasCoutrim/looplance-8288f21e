@@ -193,8 +193,6 @@ export type Database = {
       arenas: {
         Row: {
           active: boolean
-          agent_webhook_secret: string | null
-          agent_webhook_url: string | null
           city: string | null
           config_version: number
           created_at: string
@@ -206,15 +204,9 @@ export type Database = {
           retention_days: number | null
           slug: string
           state: string | null
-          supabase_anon_key: string | null
-          supabase_service_key: string | null
-          supabase_url: string | null
-          videos_bucket: string | null
         }
         Insert: {
           active?: boolean
-          agent_webhook_secret?: string | null
-          agent_webhook_url?: string | null
           city?: string | null
           config_version?: number
           created_at?: string
@@ -226,15 +218,9 @@ export type Database = {
           retention_days?: number | null
           slug: string
           state?: string | null
-          supabase_anon_key?: string | null
-          supabase_service_key?: string | null
-          supabase_url?: string | null
-          videos_bucket?: string | null
         }
         Update: {
           active?: boolean
-          agent_webhook_secret?: string | null
-          agent_webhook_url?: string | null
           city?: string | null
           config_version?: number
           created_at?: string
@@ -246,10 +232,6 @@ export type Database = {
           retention_days?: number | null
           slug?: string
           state?: string | null
-          supabase_anon_key?: string | null
-          supabase_service_key?: string | null
-          supabase_url?: string | null
-          videos_bucket?: string | null
         }
         Relationships: []
       }
@@ -461,75 +443,6 @@ export type Database = {
         }
         Relationships: []
       }
-      replay_jobs: {
-        Row: {
-          arena_id: string
-          aspect_ratio: string
-          coords_json: Json | null
-          created_at: string
-          crop_h: number
-          crop_w: number
-          crop_x: number
-          crop_y: number
-          duracao_segundos: number
-          end_time: number | null
-          id: string
-          output_url: string | null
-          source_video_id: string | null
-          source_video_url: string | null
-          start_time: number | null
-          status: string
-          thumbnail_url: string | null
-          timestamp_inicio: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          arena_id: string
-          aspect_ratio?: string
-          coords_json?: Json | null
-          created_at?: string
-          crop_h?: number
-          crop_w?: number
-          crop_x?: number
-          crop_y?: number
-          duracao_segundos?: number
-          end_time?: number | null
-          id?: string
-          output_url?: string | null
-          source_video_id?: string | null
-          source_video_url?: string | null
-          start_time?: number | null
-          status?: string
-          thumbnail_url?: string | null
-          timestamp_inicio?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          arena_id?: string
-          aspect_ratio?: string
-          coords_json?: Json | null
-          created_at?: string
-          crop_h?: number
-          crop_w?: number
-          crop_x?: number
-          crop_y?: number
-          duracao_segundos?: number
-          end_time?: number | null
-          id?: string
-          output_url?: string | null
-          source_video_id?: string | null
-          source_video_url?: string | null
-          start_time?: number | null
-          status?: string
-          thumbnail_url?: string | null
-          timestamp_inicio?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           arena_id: string | null
@@ -576,7 +489,6 @@ export type Database = {
           created_at: string
           duration_seconds: number | null
           id: string
-          thumbnail_url: string | null
           title: string
           uploaded_by: string | null
           video_url: string
@@ -587,7 +499,6 @@ export type Database = {
           created_at?: string
           duration_seconds?: number | null
           id?: string
-          thumbnail_url?: string | null
           title: string
           uploaded_by?: string | null
           video_url: string
@@ -598,7 +509,6 @@ export type Database = {
           created_at?: string
           duration_seconds?: number | null
           id?: string
-          thumbnail_url?: string | null
           title?: string
           uploaded_by?: string | null
           video_url?: string
@@ -715,8 +625,6 @@ export type Database = {
           primary_color: string | null
           slug: string | null
           state: string | null
-          supabase_anon_key: string | null
-          supabase_url: string | null
         }
         Insert: {
           active?: boolean | null
@@ -727,8 +635,6 @@ export type Database = {
           primary_color?: string | null
           slug?: string | null
           state?: string | null
-          supabase_anon_key?: string | null
-          supabase_url?: string | null
         }
         Update: {
           active?: boolean | null
@@ -739,8 +645,6 @@ export type Database = {
           primary_color?: string | null
           slug?: string | null
           state?: string | null
-          supabase_anon_key?: string | null
-          supabase_url?: string | null
         }
         Relationships: []
       }

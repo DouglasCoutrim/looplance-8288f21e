@@ -13,7 +13,6 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ReplaysRouteImport } from './routes/replays'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PainelRouteImport } from './routes/painel'
-import { Route as MeusReplaysRouteImport } from './routes/meus-replays'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AoVivoRouteImport } from './routes/ao-vivo'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -45,11 +44,6 @@ const PerfilRoute = PerfilRouteImport.update({
 const PainelRoute = PainelRouteImport.update({
   id: '/painel',
   path: '/painel',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MeusReplaysRoute = MeusReplaysRouteImport.update({
-  id: '/meus-replays',
-  path: '/meus-replays',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -120,7 +114,6 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/ao-vivo': typeof AoVivoRoute
   '/login': typeof LoginRoute
-  '/meus-replays': typeof MeusReplaysRoute
   '/painel': typeof PainelRoute
   '/perfil': typeof PerfilRoute
   '/replays': typeof ReplaysRoute
@@ -139,7 +132,6 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteWithChildren
   '/ao-vivo': typeof AoVivoRoute
   '/login': typeof LoginRoute
-  '/meus-replays': typeof MeusReplaysRoute
   '/painel': typeof PainelRoute
   '/perfil': typeof PerfilRoute
   '/replays': typeof ReplaysRoute
@@ -159,7 +151,6 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/ao-vivo': typeof AoVivoRoute
   '/login': typeof LoginRoute
-  '/meus-replays': typeof MeusReplaysRoute
   '/painel': typeof PainelRoute
   '/perfil': typeof PerfilRoute
   '/replays': typeof ReplaysRoute
@@ -180,7 +171,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/ao-vivo'
     | '/login'
-    | '/meus-replays'
     | '/painel'
     | '/perfil'
     | '/replays'
@@ -199,7 +189,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/ao-vivo'
     | '/login'
-    | '/meus-replays'
     | '/painel'
     | '/perfil'
     | '/replays'
@@ -218,7 +207,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/ao-vivo'
     | '/login'
-    | '/meus-replays'
     | '/painel'
     | '/perfil'
     | '/replays'
@@ -238,7 +226,6 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AoVivoRoute: typeof AoVivoRoute
   LoginRoute: typeof LoginRoute
-  MeusReplaysRoute: typeof MeusReplaysRoute
   PainelRoute: typeof PainelRoute
   PerfilRoute: typeof PerfilRoute
   ReplaysRoute: typeof ReplaysRoute
@@ -277,13 +264,6 @@ declare module '@tanstack/react-router' {
       path: '/painel'
       fullPath: '/painel'
       preLoaderRoute: typeof PainelRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/meus-replays': {
-      id: '/meus-replays'
-      path: '/meus-replays'
-      fullPath: '/meus-replays'
-      preLoaderRoute: typeof MeusReplaysRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -393,7 +373,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AoVivoRoute: AoVivoRoute,
   LoginRoute: LoginRoute,
-  MeusReplaysRoute: MeusReplaysRoute,
   PainelRoute: PainelRoute,
   PerfilRoute: PerfilRoute,
   ReplaysRoute: ReplaysRoute,
