@@ -155,11 +155,3 @@ async function listFromStorage(client: any, bucketName: string, folder: string, 
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 }
-  } catch (error) {
-    console.error('Function error:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-  }
-})
