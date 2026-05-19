@@ -243,8 +243,7 @@ function ArenaDashboard() {
 
             <TabsContent value="bucket" className="mt-4">
               <BucketVideoFeed
-                supabaseUrl={arena.supabase_url}
-                supabaseAnonKey={arena.supabase_anon_key}
+                arenaId={arena.id}
                 bucket="replays"
                 brand={brand}
               />
