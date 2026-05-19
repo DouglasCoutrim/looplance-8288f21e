@@ -95,14 +95,23 @@ function ArenaDashboard() {
         toast.error("Não foi possível carregar os lances recentes.");
       }
 
-      const rs = rows.map((video: any) => ({
-        id: video.id,
-        video_url: video.video_url,
-        thumbnail_url: video.thumbnail_url,
-        data_evento: video.created_at.slice(0, 10),
-        hora_evento: video.created_at.split("T")[1]?.slice(0, 8) ?? "00:00:00",
-        quadra_id: video.court_id,
-      }));
+      const rs = rows.map((video: any) => {
+        const date = new Date(video.created_at);
+        return {
+          id: video.id,
+          video_url: video.video_url,
+          thumbnail_url: video.thumbnail_url,
+          data_evento: format(date, "yyyy-MM-dd"),
+          hora_evento: date.toLocaleTimeString("pt-BR", {
+            timeZone: "America/Sao_Paulo",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+          }),
+          quadra_id: video.court_id,
+        };
+      });
       setReplays(rs);
       setSelected(rs[0] ?? null);
     })();
@@ -396,7 +405,9 @@ function EmptyVideos() {
 
 function quadraNome(quadras: Quadra[], id: string | null) {
   if (!id) return "Quadra";
-  return quadras.find((q) => q.id === id)?.nome ?? "Quadra";
+  // Tenta encontrar por ID exato ou por substring no nome (ex: "1" em "Quadra 1")
+  const found = quadras.find((q) => q.id === id || q.nome.toLowerCase().includes(id.toLowerCase()));
+  return found?.nome ?? `Quadra ${id}`;
 }
 
 function ThumbCard({
