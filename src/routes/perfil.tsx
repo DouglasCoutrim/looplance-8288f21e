@@ -52,7 +52,7 @@ function PerfilPage() {
           </Button>
         ) : (
           <ul className="overflow-hidden rounded-2xl border border-border bg-card">
-            <Row icon={Film} label="Meus replays" onClick={() => navigate({ to: "/meus-replays" })} />
+            <Row icon={Film} label="Meus replays" onClick={() => navigate({ to: "/replays" })} />
             {(isSuperAdmin || adminArenaId) && (
               <Row icon={Shield} label="Painel administrativo"
                 onClick={() => navigate({ to: isSuperAdmin ? "/admin" : "/painel" })} />

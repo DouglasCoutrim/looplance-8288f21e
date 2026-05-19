@@ -497,7 +497,7 @@ function RetentionCard() {
         <h2 className="mb-1 text-lg font-semibold">Retenção padrão</h2>
         <p className="mb-4 text-sm text-muted-foreground">
           Quantidade de dias que vídeos ficam armazenados. Cada arena pode sobrescrever esse valor
-          em <strong>Arena → Conexão</strong>. Limpeza roda diariamente às 03:00 (UTC).
+          em <strong>Arena → Configurações</strong>. Limpeza roda diariamente às 03:00 (UTC).
         </p>
         <div className="flex items-end gap-3">
           <div>
@@ -511,8 +511,7 @@ function RetentionCard() {
       <Card className="p-6">
         <h3 className="mb-1 text-base font-semibold">Executar limpeza agora</h3>
         <p className="mb-4 text-sm text-muted-foreground">
-          Roda imediatamente o processo de retenção em todas as arenas com Supabase próprio configurado
-          (URL + service key).
+          Roda imediatamente o processo de retenção em todas as arenas.
         </p>
         <Button onClick={runNow} disabled={running} variant="outline">
           {running ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Executando...</> : "Rodar agora"}
@@ -537,7 +536,7 @@ function RetentionCard() {
                     </tr>
                   ))}
                   {(lastResult.processed ?? []).length === 0 && (
-                    <tr><td colSpan={3} className="p-6 text-center text-muted-foreground">Nenhuma arena com Supabase próprio configurado.</td></tr>
+                    <tr><td colSpan={3} className="p-6 text-center text-muted-foreground">Nenhuma arena processada.</td></tr>
                   )}
                 </tbody>
               </table>
