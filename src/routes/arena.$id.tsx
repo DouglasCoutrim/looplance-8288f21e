@@ -396,7 +396,9 @@ function EmptyVideos() {
 
 function quadraNome(quadras: Quadra[], id: string | null) {
   if (!id) return "Quadra";
-  return quadras.find((q) => q.id === id)?.nome ?? "Quadra";
+  // Tenta encontrar por ID exato ou por substring no nome (ex: "1" em "Quadra 1")
+  const found = quadras.find((q) => q.id === id || q.nome.toLowerCase().includes(id.toLowerCase()));
+  return found?.nome ?? `Quadra ${id}`;
 }
 
 function ThumbCard({
