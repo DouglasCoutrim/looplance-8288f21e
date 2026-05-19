@@ -26,13 +26,7 @@ async function assertSuper(supabase: any, userId: string) {
 
 const ConnSchema = z.object({
   arenaId: z.string().uuid(),
-  supabase_url: z.string().trim().url().nullable(),
-  supabase_anon_key: z.string().trim().min(1).nullable(),
-  supabase_service_key: z.string().trim().min(1).nullable().optional(),
-  videos_bucket: z.string().trim().min(1).max(120).nullable(),
   retention_days: z.number().int().min(1).max(3650).nullable(),
-  agent_webhook_url: z.string().trim().url().nullable().optional(),
-  agent_webhook_secret: z.string().trim().min(1).nullable().optional(),
 });
 
 export const updateArenaConnection = createServerFn({ method: "POST" })
@@ -40,29 +34,13 @@ export const updateArenaConnection = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ConnSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertSuper(context.supabase, context.userId);
-    const update: {
-      supabase_url: string | null;
-      supabase_anon_key: string | null;
-      videos_bucket: string | null;
-      retention_days: number | null;
-      supabase_service_key?: string;
-      agent_webhook_url?: string | null;
-      agent_webhook_secret?: string;
-    } = {
-      supabase_url: data.supabase_url,
-      supabase_anon_key: data.supabase_anon_key,
-      videos_bucket: data.videos_bucket,
+    const update = {
       retention_days: data.retention_days,
     };
-    if (data.supabase_service_key) update.supabase_service_key = data.supabase_service_key;
-    if (data.agent_webhook_url !== undefined) update.agent_webhook_url = data.agent_webhook_url;
-    if (data.agent_webhook_secret) update.agent_webhook_secret = data.agent_webhook_secret;
 
     const { error } = await supabaseAdmin.from("arenas").update(update).eq("id", data.arenaId);
     if (error) throw new Error(error.message);
 
-    // Fire-and-forget: notify the agent so it reloads config immediately.
-    notifyAgent(data.arenaId, "arena.updated").catch(() => {});
     return { ok: true };
   });
 

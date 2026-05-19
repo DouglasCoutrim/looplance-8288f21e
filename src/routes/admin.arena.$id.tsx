@@ -22,11 +22,7 @@ interface Arena {
   primary_color: string;
   city: string | null;
   state: string | null;
-  supabase_url: string | null;
-  supabase_anon_key: string | null;
-  videos_bucket: string | null;
   retention_days: number | null;
-  agent_webhook_url: string | null;
 }
 interface Sponsor { id: string; name: string; logo_url: string; link_url: string | null; display_order: number }
 interface CamRow { id: string; name: string; rtsp_url: string; button_id: string | null }
@@ -46,7 +42,7 @@ function ArenaDetailPage() {
     setLoadError(null);
     const { data: a, error: arenaError } = await supabase
       .from("arenas")
-      .select("id,name,slug,logo_url,primary_color,city,state,supabase_url,supabase_anon_key,videos_bucket,retention_days,agent_webhook_url")
+      .select("id,name,slug,logo_url,primary_color,city,state,retention_days")
       .eq("id", id).maybeSingle();
     if (arenaError) {
       setLoadError(arenaError.message);
@@ -115,7 +111,7 @@ function ArenaDetailPage() {
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
           <TabsTrigger value="patrocinadores">Patrocinadores</TabsTrigger>
           <TabsTrigger value="whitelabel">White Label</TabsTrigger>
-          <TabsTrigger value="conexao">Conexão</TabsTrigger>
+          <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
         </TabsList>
 
         <TabsContent value="quadras">
@@ -138,9 +134,8 @@ function ArenaDetailPage() {
           <WhiteLabelCard arena={arena} onSaved={load} />
         </TabsContent>
 
-        <TabsContent value="conexao" className="space-y-6">
-          <ConnectionCard arena={arena} onSaved={load} />
-          <AgentTokensCard arenaId={arena.id} />
+        <TabsContent value="configuracoes" className="space-y-6">
+          <ConfiguracoesCard arena={arena} onSaved={load} />
         </TabsContent>
       </Tabs>
     </AppShell>
