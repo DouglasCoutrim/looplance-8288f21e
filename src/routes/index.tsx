@@ -40,10 +40,10 @@ function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [arenas, setArenas] = useState<Arena[]>([]);
-  const { replays } = useGlobalReplays();
-  const topReplays = useMemo(() => replays.slice(0, 5), [replays]);
-  const topLoading = loading;
   const [loading, setLoading] = useState(true);
+  const { replays, loading: replaysLoading } = useGlobalReplays();
+  const topReplays = useMemo(() => replays.slice(0, 5), [replays]);
+  const topLoading = replaysLoading;
   const [search, setSearch] = useState("");
   const [filterState, setFilterState] = useState<string>("all");
   const [filterCity, setFilterCity] = useState<string>("all");
@@ -65,6 +65,7 @@ function Home() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      setLoading(true);
       const aRes = await supabase.from("public_arenas" as never).select("*");
       if (!cancelled && aRes.data) setArenas(aRes.data as Arena[]);
       if (!cancelled) setLoading(false);
