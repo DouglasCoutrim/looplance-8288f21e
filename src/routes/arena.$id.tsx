@@ -4,9 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ArrowLeft, Loader2, MapPin, PlayCircle, Radio, Star, RotateCcw, RotateCw, Download } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
@@ -16,7 +13,7 @@ import { toast } from "sonner";
 import { resolveReplayUrl } from "@/lib/replays";
 
 import { VideoActions } from "@/components/VideoActions";
-import { BucketVideoFeed } from "@/components/BucketVideoFeed";
+
 
 export const Route = createFileRoute("/arena/$id")({
   component: ArenaDashboard,
@@ -401,208 +398,9 @@ function ThumbCard({
       </button>
       <div className="flex items-center justify-between gap-1 p-2">
         <p className="truncate text-[11px] text-muted-foreground">{quadraNome(quadras, replay.quadra_id)}</p>
-        <button onClick={onEdit} title="Gerar replay" className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground">
-          <Scissors className="h-3.5 w-3.5" />
-        </button>
       </div>
     </div>
   );
 }
 
-interface Crop { x: number; y: number; w: number; h: number }
-type Aspect = "9:16" | "1:1" | "16:9";
-
-function ReplayEditor({
-  replay, arena, brand, user, onClose,
-}: {
-  replay: Replay; arena: PublicArena; brand: string;
-  user: ReturnType<typeof useAuth>["user"]; onClose: () => void;
-}) {
-  const navigate = useNavigate();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const stageRef = useRef<HTMLDivElement>(null);
-  const [duration, setDuration] = useState(0);
-  const [start, setStart] = useState(0);
-  const clipLen = 30;
-  const [aspect, setAspect] = useState<Aspect>("9:16");
-  const [crop, setCrop] = useState<Crop>({ x: 0.25, y: 0.1, w: 0.5, h: 0.8 });
-  const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    const r = aspect === "9:16" ? 9 / 16 : aspect === "1:1" ? 1 : 16 / 9;
-    setCrop((c) => {
-      const newW = Math.min(1, c.h * (r / (16 / 9)));
-      const x = Math.min(Math.max(c.x + c.w / 2 - newW / 2, 0), 1 - newW);
-      return { x, y: c.y, w: newW, h: c.h };
-    });
-  }, [aspect]);
-
-  function onLoaded() {
-    const v = videoRef.current;
-    if (v) {
-      setDuration(v.duration || 0);
-      v.currentTime = start;
-    }
-  }
-
-  function seek(s: number) {
-    setStart(s);
-    if (videoRef.current) videoRef.current.currentTime = s;
-  }
-
-  const dragRef = useRef<{ kind: "move" | "resize" | null; sx: number; sy: number; orig: Crop }>({ kind: null, sx: 0, sy: 0, orig: crop });
-  function startDrag(e: React.PointerEvent, kind: "move" | "resize") {
-    e.preventDefault();
-    e.stopPropagation();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    dragRef.current = { kind, sx: e.clientX, sy: e.clientY, orig: crop };
-  }
-  function onDrag(e: React.PointerEvent) {
-    if (!dragRef.current.kind || !stageRef.current) return;
-    const rect = stageRef.current.getBoundingClientRect();
-    const dx = (e.clientX - dragRef.current.sx) / rect.width;
-    const dy = (e.clientY - dragRef.current.sy) / rect.height;
-    const o = dragRef.current.orig;
-    if (dragRef.current.kind === "move") {
-      setCrop({
-        x: clamp(o.x + dx, 0, 1 - o.w),
-        y: clamp(o.y + dy, 0, 1 - o.h),
-        w: o.w, h: o.h,
-      });
-    } else {
-      const newH = clamp(o.h + dy, 0.15, 1 - o.y);
-      const r = aspect === "9:16" ? 9 / 16 : aspect === "1:1" ? 1 : 16 / 9;
-      const newW = clamp(newH * (r / (16 / 9)), 0.1, 1 - o.x);
-      setCrop({ x: o.x, y: o.y, w: newW, h: newH });
-    }
-  }
-  function endDrag(e: React.PointerEvent) {
-    dragRef.current.kind = null;
-    try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch { }
-  }
-
-  async function submit() {
-    if (!user) {
-      toast.info("Faça login para gerar replays");
-      navigate({ to: "/login" });
-      return;
-    }
-    setSubmitting(true);
-    const { error } = await supabase.from("replay_jobs" as never).insert({
-      user_id: user.id,
-      arena_id: arena.id,
-      source_video_url: replay.video_url,
-      timestamp_inicio: Number(start.toFixed(2)),
-      duracao_segundos: clipLen,
-      start_time: Number(start.toFixed(2)),
-      end_time: Number((start + clipLen).toFixed(2)),
-      coords_json: {
-        x: Number(crop.x.toFixed(4)), y: Number(crop.y.toFixed(4)),
-        w: Number(crop.w.toFixed(4)), h: Number(crop.h.toFixed(4)),
-      },
-      crop_x: Number(crop.x.toFixed(4)),
-      crop_y: Number(crop.y.toFixed(4)),
-      crop_w: Number(crop.w.toFixed(4)),
-      crop_h: Number(crop.h.toFixed(4)),
-      aspect_ratio: aspect,
-      status: "pending",
-    } as never);
-    setSubmitting(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Replay enviado para processamento!");
-    onClose();
-    navigate({ to: "/meus-replays" });
-  }
-
-  return (
-    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Editar Replay</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <div ref={stageRef} className="relative aspect-video w-full select-none overflow-hidden rounded-lg bg-black">
-            <video
-              ref={videoRef}
-              src={resolveReplayUrl(replay.video_url)}
-              onLoadedMetadata={onLoaded}
-              className="h-full w-full object-contain"
-              playsInline
-              muted
-            />
-            <div className="pointer-events-none absolute inset-0">
-              <div className="absolute inset-0 bg-black/60" />
-              <div
-                className="absolute bg-transparent"
-                style={{
-                  left: `${crop.x * 100}%`, top: `${crop.y * 100}%`,
-                  width: `${crop.w * 100}%`, height: `${crop.h * 100}%`,
-                  boxShadow: "0 0 0 9999px rgba(0,0,0,0.6)",
-                }}
-              />
-            </div>
-            <div
-              onPointerDown={(e) => startDrag(e, "move")}
-              onPointerMove={onDrag}
-              onPointerUp={endDrag}
-              className="absolute cursor-move border-2 shadow-[0_0_0_1px_rgba(0,0,0,0.5)]"
-              style={{
-                left: `${crop.x * 100}%`, top: `${crop.y * 100}%`,
-                width: `${crop.w * 100}%`, height: `${crop.h * 100}%`,
-                borderColor: brand,
-              }}
-            >
-              <span className="absolute -top-6 left-0 rounded px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: brand }}>{aspect}</span>
-              <div
-                onPointerDown={(e) => startDrag(e, "resize")}
-                onPointerMove={onDrag}
-                onPointerUp={endDrag}
-                className="absolute -bottom-1.5 -right-1.5 h-4 w-4 cursor-se-resize rounded-sm ring-2 ring-black/40"
-                style={{ backgroundColor: brand }}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-2">
-            <ToggleGroup type="single" value={aspect} onValueChange={(v) => v && setAspect(v as Aspect)}>
-              <ToggleGroupItem value="9:16">9:16</ToggleGroupItem>
-              <ToggleGroupItem value="1:1">1:1</ToggleGroupItem>
-              <ToggleGroupItem value="16:9">16:9</ToggleGroupItem>
-            </ToggleGroup>
-            <span className="text-xs text-muted-foreground">Clipe de {clipLen}s</span>
-          </div>
-
-          <div>
-            <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-              <span>Início: {fmt(start)}</span>
-              <span>Fim: {fmt(Math.min(start + clipLen, duration))}</span>
-            </div>
-            <Slider
-              value={[start]}
-              min={0}
-              max={Math.max(0, duration - clipLen)}
-              step={0.5}
-              onValueChange={(v) => seek(v[0])}
-            />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-          <Button onClick={submit} disabled={submitting} style={{ backgroundColor: brand }} className="text-white">
-            {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Scissors className="mr-2 h-4 w-4" />}
-            Gerar Replay
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 function clamp(n: number, min: number, max: number) { return Math.min(Math.max(n, min), max); }
-function fmt(s: number) {
-  if (!isFinite(s)) return "0:00";
-  const m = Math.floor(s / 60); const r = Math.floor(s % 60);
-  return `${m}:${r.toString().padStart(2, "0")}`;
-}
