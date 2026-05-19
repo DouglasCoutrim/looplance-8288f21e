@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getArenaClient } from "@/lib/arena-client";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2, PlayCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -12,8 +12,7 @@ interface BucketVideo {
 }
 
 interface Props {
-  supabaseUrl: string | null;
-  supabaseAnonKey: string | null;
+  arenaId: string;
   bucket?: string | null;
   /** Optional folder/prefix inside the bucket (ex: court id). */
   prefix?: string | null;
@@ -22,12 +21,10 @@ interface Props {
 
 /**
  * Lê os arquivos diretamente do bucket de Storage do Supabase EXTERNO
- * da arena, usando um cliente criado dinamicamente em runtime.
- * Não depende da tabela `videos` — lista o próprio bucket.
+ * através de uma Edge Function para evitar problemas de CSP.
  */
 export function BucketVideoFeed({
-  supabaseUrl,
-  supabaseAnonKey,
+  arenaId,
   bucket,
   prefix,
   brand = "#FF6600",
@@ -46,44 +43,27 @@ export function BucketVideoFeed({
       setLoading(true);
       setError(null);
       try {
-        if (!supabaseUrl || !supabaseAnonKey) {
-          throw new Error("Esta arena ainda não tem credenciais do Supabase externo cadastradas.");
+        if (!arenaId) {
+          throw new Error("ID da arena não fornecido.");
         }
-        const client = getArenaClient(supabaseUrl, supabaseAnonKey);
-        const { data, error } = await client.storage
-          .from(bucketName)
-          .list(folder || undefined, {
-            limit: 200,
-            sortBy: { column: "created_at", order: "desc" },
-          });
-        if (error) throw error;
 
-        const files = (data ?? []).filter(
-          (f) => f.name && !f.name.endsWith("/") && /\.(mp4|mov|webm|mkv|m4v)$/i.test(f.name),
-        );
-
-        const mapped: BucketVideo[] = files.map((f) => {
-          const fullPath = folder ? `${folder}/${f.name}` : f.name;
-          const { data: pub } = client.storage.from(bucketName).getPublicUrl(fullPath);
-          const createdAt =
-            (f as { created_at?: string | null }).created_at ??
-            (f as { updated_at?: string | null }).updated_at ??
-            null;
-          return {
-            name: f.name,
-            url: pub.publicUrl,
-            createdAt,
-            size: (f as { metadata?: { size?: number } }).metadata?.size ?? null,
-          };
+        const { data, error: funcError } = await supabase.functions.invoke("list-arena-videos", {
+          body: { arenaId, bucket: bucketName, prefix: folder },
         });
 
+        if (funcError) throw funcError;
+        if (data.error) throw new Error(data.error);
+
+        const mapped: BucketVideo[] = data.videos || [];
+
         mapped.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+        
         if (cancel) return;
         setVideos(mapped);
         setSelected(mapped[0] ?? null);
       } catch (e) {
         if (cancel) return;
-        setError(e instanceof Error ? e.message : "Falha ao listar bucket.");
+        setError(e instanceof Error ? e.message : "Falha ao listar vídeos.");
       } finally {
         if (!cancel) setLoading(false);
       }
@@ -91,7 +71,7 @@ export function BucketVideoFeed({
     return () => {
       cancel = true;
     };
-  }, [supabaseUrl, supabaseAnonKey, bucketName, folder]);
+  }, [arenaId, bucketName, folder]);
 
   const groups = useMemo(() => {
     const m = new Map<string, BucketVideo[]>();
