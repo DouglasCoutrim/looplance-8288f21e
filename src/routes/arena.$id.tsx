@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { resolveReplayUrl } from "@/lib/replays";
 import { getArenaClient } from "@/lib/arena-client";
 import { VideoActions } from "@/components/VideoActions";
+import { BucketVideoFeed } from "@/components/BucketVideoFeed";
 
 export const Route = createFileRoute("/arena/$id")({
   component: ArenaDashboard,
@@ -237,7 +238,17 @@ function ArenaDashboard() {
             <TabsList>
               <TabsTrigger value="recent">Por horário</TabsTrigger>
               <TabsTrigger value="court">Por quadra</TabsTrigger>
+              <TabsTrigger value="bucket">Bucket</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="bucket" className="mt-4">
+              <BucketVideoFeed
+                supabaseUrl={arena.supabase_url}
+                supabaseAnonKey={arena.supabase_anon_key}
+                bucket="replays"
+                brand={brand}
+              />
+            </TabsContent>
 
             <TabsContent value="recent" className="mt-4 space-y-6">
               {grouped.length === 0 && <EmptyVideos />}
