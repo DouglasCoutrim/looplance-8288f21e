@@ -113,8 +113,8 @@ function Home() {
   return (
     <div className="min-h-screen bg-background pb-24 text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 py-2">
-          <img src={logoFull} alt="LoopLance" className="h-24 w-auto" />
+        <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 py-4">
+          <img src={logoFull} alt="LoopLance" className="h-32 w-auto" />
           <button
             onClick={() => navigate({ to: "/perfil" })}
             className="grid h-10 w-10 place-items-center rounded-full text-muted-foreground transition hover:bg-card hover:text-primary"

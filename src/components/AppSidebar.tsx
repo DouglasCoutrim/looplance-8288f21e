@@ -55,10 +55,10 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
-        <Link to="/" className="flex items-center justify-center py-2">
+        <Link to="/" className="flex items-center justify-center py-4">
           {collapsed
-            ? <img src={logoMark} alt="LoopLance" className="h-9 w-auto" />
-            : <img src={logoFull} alt="LoopLance" className="h-12 w-auto" />}
+            ? <img src={logoMark} alt="LoopLance" className="h-11 w-auto" />
+            : <img src={logoFull} alt="LoopLance" className="h-20 w-auto" />}
         </Link>
       </SidebarHeader>
       <SidebarContent>
