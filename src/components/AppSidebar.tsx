@@ -57,8 +57,8 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border">
         <Link to="/" className="flex items-center justify-center py-2">
           {collapsed
-            ? <img src={logoMark} alt="LoopLance" className="h-7" />
-            : <img src={logoFull} alt="LoopLance" className="h-8" />}
+            ? <img src={logoMark} alt="LoopLance" className="h-8 w-auto" />
+            : <img src={logoFull} alt="LoopLance" className="h-10 w-auto" />}
         </Link>
       </SidebarHeader>
       <SidebarContent>
