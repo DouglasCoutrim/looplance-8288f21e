@@ -9,102 +9,38 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiPublicIngestReplayRouteImport } from './routes/api/public/ingest.replay'
-import { Route as ApiPublicHooksCleanupVideosRouteImport } from './routes/api/public/hooks/cleanup-videos'
-import { Route as ApiPublicAgentConfigRouteImport } from './routes/api/public/agent.config'
 
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicIngestReplayRoute = ApiPublicIngestReplayRouteImport.update({
-  id: '/api/public/ingest/replay',
-  path: '/api/public/ingest/replay',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicHooksCleanupVideosRoute =
-  ApiPublicHooksCleanupVideosRouteImport.update({
-    id: '/api/public/hooks/cleanup-videos',
-    path: '/api/public/hooks/cleanup-videos',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicAgentConfigRoute = ApiPublicAgentConfigRouteImport.update({
-  id: '/api/public/agent/config',
-  path: '/api/public/agent/config',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/api/public/agent/config': typeof ApiPublicAgentConfigRoute
-  '/api/public/hooks/cleanup-videos': typeof ApiPublicHooksCleanupVideosRoute
-  '/api/public/ingest/replay': typeof ApiPublicIngestReplayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/api/public/agent/config': typeof ApiPublicAgentConfigRoute
-  '/api/public/hooks/cleanup-videos': typeof ApiPublicHooksCleanupVideosRoute
-  '/api/public/ingest/replay': typeof ApiPublicIngestReplayRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/api/public/agent/config': typeof ApiPublicAgentConfigRoute
-  '/api/public/hooks/cleanup-videos': typeof ApiPublicHooksCleanupVideosRoute
-  '/api/public/ingest/replay': typeof ApiPublicIngestReplayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/login'
-    | '/api/public/agent/config'
-    | '/api/public/hooks/cleanup-videos'
-    | '/api/public/ingest/replay'
+  fullPaths: '/'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/login'
-    | '/api/public/agent/config'
-    | '/api/public/hooks/cleanup-videos'
-    | '/api/public/ingest/replay'
-  id:
-    | '__root__'
-    | '/'
-    | '/login'
-    | '/api/public/agent/config'
-    | '/api/public/hooks/cleanup-videos'
-    | '/api/public/ingest/replay'
+  to: '/'
+  id: '__root__' | '/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  LoginRoute: typeof LoginRoute
-  ApiPublicAgentConfigRoute: typeof ApiPublicAgentConfigRoute
-  ApiPublicHooksCleanupVideosRoute: typeof ApiPublicHooksCleanupVideosRoute
-  ApiPublicIngestReplayRoute: typeof ApiPublicIngestReplayRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -112,37 +48,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/ingest/replay': {
-      id: '/api/public/ingest/replay'
-      path: '/api/public/ingest/replay'
-      fullPath: '/api/public/ingest/replay'
-      preLoaderRoute: typeof ApiPublicIngestReplayRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/cleanup-videos': {
-      id: '/api/public/hooks/cleanup-videos'
-      path: '/api/public/hooks/cleanup-videos'
-      fullPath: '/api/public/hooks/cleanup-videos'
-      preLoaderRoute: typeof ApiPublicHooksCleanupVideosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/agent/config': {
-      id: '/api/public/agent/config'
-      path: '/api/public/agent/config'
-      fullPath: '/api/public/agent/config'
-      preLoaderRoute: typeof ApiPublicAgentConfigRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  LoginRoute: LoginRoute,
-  ApiPublicAgentConfigRoute: ApiPublicAgentConfigRoute,
-  ApiPublicHooksCleanupVideosRoute: ApiPublicHooksCleanupVideosRoute,
-  ApiPublicIngestReplayRoute: ApiPublicIngestReplayRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
