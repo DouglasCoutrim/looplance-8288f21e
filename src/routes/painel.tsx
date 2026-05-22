@@ -17,18 +17,14 @@ import { VideoActions } from "@/components/VideoActions";
 export const Route = createFileRoute("/painel")({ component: ArenaPanel });
 
 interface Arena { id: string; name: string; slug: string; logo_url: string | null; primary_color: string; city: string | null; state: string | null; }
-interface Court { id: string; name: string; qr_token: string; }
+interface Court { id: string; name: string; qr_token: string; rtsp_url: string | null; }
 interface Video { id: string; video_url: string; quadra_id: string | null; created_at: string; }
-interface CameraRow { id: string; name: string; }
-interface CourtCameraRow { id: string; court_id: string; camera_id: string; }
 
 function ArenaPanel() {
   const { user, loading, adminArenaId } = useAuth();
   const [arena, setArena] = useState<Arena | null>(null);
   const [courts, setCourts] = useState<Court[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
-  const [cameras, setCameras] = useState<CameraRow[]>([]);
-  const [courtCameras, setCourtCameras] = useState<CourtCameraRow[]>([]);
   const [newCourt, setNewCourt] = useState("");
   const [arenaName, setArenaName] = useState("");
   const [arenaCity, setArenaCity] = useState("");
@@ -41,18 +37,14 @@ function ArenaPanel() {
 
   async function load() {
     if (!adminArenaId) return;
-    const [{ data: a }, { data: c }, { data: v }, { data: cams }, { data: cc }] = await Promise.all([
+    const [{ data: a }, { data: c }, { data: v }] = await Promise.all([
       supabase.from("arenas").select("*").eq("id", adminArenaId).maybeSingle(),
       supabase.from("courts").select("*").eq("arena_id", adminArenaId).order("name"),
       supabase.from("replays").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }),
-      supabase.from("cameras").select("id,name").eq("arena_id", adminArenaId).order("name"),
-      supabase.from("court_cameras").select("id,court_id,camera_id").eq("arena_id", adminArenaId),
     ]);
     if (a) { setArena(a as Arena); setArenaName(a.name); setArenaCity((a as Arena).city ?? ""); setArenaState((a as Arena).state ?? ""); }
     setCourts((c ?? []) as Court[]);
     setVideos((v ?? []) as Video[]);
-    setCameras((cams ?? []) as CameraRow[]);
-    setCourtCameras((cc ?? []) as CourtCameraRow[]);
   }
   useEffect(() => { load(); }, [adminArenaId]);
 
@@ -97,22 +89,15 @@ function ArenaPanel() {
     load();
   }
 
-  async function toggleCourtCamera(courtId: string, cameraId: string, on: boolean) {
-    if (!arena) return;
-    if (on) {
-      const { error } = await supabase
-        .from("court_cameras")
-        .insert({ court_id: courtId, camera_id: cameraId, arena_id: arena.id });
-      if (error) return toast.error(error.message);
-    } else {
-      const { error } = await supabase
-        .from("court_cameras")
-        .delete()
-        .eq("court_id", courtId)
-        .eq("camera_id", cameraId);
-      if (error) return toast.error(error.message);
-    }
-    load();
+  async function testReplay(courtId: string) {
+    if (!adminArenaId) return;
+    const { error } = await supabase.from("arena_buttons").insert({
+      arena_id: adminArenaId,
+      quadra_id: courtId,
+      status: "disparado",
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Sinal de gatilho enviado com sucesso!");
   }
 
   async function uploadVideo(e: React.FormEvent) {
@@ -209,8 +194,7 @@ function ArenaPanel() {
           <Card className="p-6">
             <h2 className="mb-2 text-lg font-semibold">Minhas Quadras</h2>
             <p className="mb-4 text-sm text-muted-foreground">
-              Cadastre as quadras da sua arena e vincule as câmeras já registradas pelo super
-              admin para esta arena.
+              Cadastre as quadras da sua arena e acompanhe seus replays.
             </p>
             <form onSubmit={addCourt} className="flex gap-2">
               <Input value={newCourt} onChange={(e) => setNewCourt(e.target.value)} placeholder="Nome da quadra" required />
@@ -219,7 +203,6 @@ function ArenaPanel() {
           </Card>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {courts.map((c) => {
-              const linkedIds = new Set(courtCameras.filter((cc) => cc.court_id === c.id).map((cc) => cc.camera_id));
               return (
                 <Card key={c.id} className="p-5">
                   <div className="mb-3 flex items-center justify-between">
@@ -237,29 +220,9 @@ function ArenaPanel() {
                   </Button>
 
                   <div className="mt-4 border-t border-border pt-3">
-                    <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                      <Camera className="h-3.5 w-3.5" /> Câmeras vinculadas
-                    </div>
-                    {cameras.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">
-                        Nenhuma câmera disponível. Peça ao super admin para cadastrar câmeras nesta arena.
-                      </p>
-                    ) : (
-                      <div className="space-y-1.5">
-                        {cameras.map((cam) => {
-                          const checked = linkedIds.has(cam.id);
-                          return (
-                            <label key={cam.id} className="flex cursor-pointer items-center gap-2 text-sm">
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={(v) => toggleCourtCamera(c.id, cam.id, Boolean(v))}
-                              />
-                              <span>{cam.name}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    )}
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => testReplay(c.id)}>
+                      Testar Replay
+                    </Button>
                   </div>
                 </Card>
               );
