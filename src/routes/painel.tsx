@@ -272,10 +272,6 @@ function ArenaPanel() {
           <Card className="p-6">
             <h2 className="mb-4 text-lg font-semibold">Publicar vídeo</h2>
             <form onSubmit={uploadVideo} className="grid gap-3 md:grid-cols-2">
-              <div className="md:col-span-2">
-                <Label>Título</Label>
-                <Input value={videoTitle} onChange={(e) => setVideoTitle(e.target.value)} required />
-              </div>
               <div>
                 <Label>Quadra</Label>
                 <select
