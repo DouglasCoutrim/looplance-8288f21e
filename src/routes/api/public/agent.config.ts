@@ -44,15 +44,20 @@ export const Route = createFileRoute('/api/public/agent/config')({
         const arenaId = tokenRow.arena_id;
 
         // Load arena scope in parallel
-        const [arenaRes, courtsRes] = await Promise.all([
+        const [arenaRes, courtsRes, buttonsRes] = await Promise.all([
           supabaseAdmin
             .from('arenas')
-            .select('*')
+            .select('id, name, slug, active, videos_bucket, retention_days, supabase_url, supabase_anon_key, supabase_service_key, config_version')
             .eq('id', arenaId)
             .maybeSingle(),
           supabaseAdmin
-            .from('courts' as any)
-            .select('id, name, rtsp_url')
+            .from('quadras' as any)
+            .select('id, nome')
+            .eq('arena_id', arenaId)
+            .then((res: any) => res, () => ({ data: [] })),
+          supabaseAdmin
+            .from('arena_button_camera_map' as any)
+            .select('pino, rtsp, camera_name, button_label, button_number')
             .eq('arena_id', arenaId)
             .then((res: any) => res, () => ({ data: [] })),
         ]);
@@ -71,7 +76,8 @@ export const Route = createFileRoute('/api/public/agent/config')({
             generated_at: new Date().toISOString(),
             config_version: (arenaRes.data as any).config_version ?? 0,
             arena: arenaRes.data,
-            courts: courtsRes.data ?? [],
+            quadras: courtsRes.data ?? [],
+            buttons: buttonsRes.data ?? [],
           }),
           { status: 200, headers: cors },
         );
