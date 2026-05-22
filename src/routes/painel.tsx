@@ -18,7 +18,7 @@ export const Route = createFileRoute("/painel")({ component: ArenaPanel });
 
 interface Arena { id: string; name: string; slug: string; logo_url: string | null; primary_color: string; city: string | null; state: string | null; }
 interface Court { id: string; name: string; qr_token: string; }
-interface Video { id: string; title: string; video_url: string; court_id: string | null; created_at: string; }
+interface Video { id: string; video_url: string; quadra_id: string | null; created_at: string; }
 interface CameraRow { id: string; name: string; }
 interface CourtCameraRow { id: string; court_id: string; camera_id: string; }
 
@@ -44,7 +44,7 @@ function ArenaPanel() {
     const [{ data: a }, { data: c }, { data: v }, { data: cams }, { data: cc }] = await Promise.all([
       supabase.from("arenas").select("*").eq("id", adminArenaId).maybeSingle(),
       supabase.from("courts").select("*").eq("arena_id", adminArenaId).order("name"),
-      supabase.from("videos").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }),
+      supabase.from("replays").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }),
       supabase.from("cameras").select("id,name").eq("arena_id", adminArenaId).order("name"),
       supabase.from("court_cameras").select("id,court_id,camera_id").eq("arena_id", adminArenaId),
     ]);
@@ -118,30 +118,28 @@ function ArenaPanel() {
   async function uploadVideo(e: React.FormEvent) {
     e.preventDefault();
     const file = fileRef.current?.files?.[0];
-    if (!file || !arena || !videoTitle) return toast.error("Preencha título e selecione um vídeo");
+    if (!file || !arena) return toast.error("Selecione um vídeo");
     setUploading(true);
     const path = `${arena.id}/${Date.now()}-${file.name}`;
     const { error: upErr } = await supabase.storage.from("arena-videos").upload(path, file);
     if (upErr) { toast.error(upErr.message); setUploading(false); return; }
     const { data: pub } = supabase.storage.from("arena-videos").getPublicUrl(path);
-    const { error } = await supabase.from("videos").insert({
+    const { error } = await supabase.from("replays").insert({
       arena_id: arena.id,
-      court_id: videoCourtId || null,
-      title: videoTitle,
+      quadra_id: videoCourtId || null,
       video_url: pub.publicUrl,
-      uploaded_by: user!.id,
     });
     setUploading(false);
     if (error) return toast.error(error.message);
     toast.success("Vídeo publicado!");
-    setVideoTitle(""); setVideoCourtId("");
+    setVideoCourtId("");
     if (fileRef.current) fileRef.current.value = "";
     load();
   }
 
   async function deleteVideo(id: string) {
     if (!confirm("Excluir este vídeo?")) return;
-    await supabase.from("videos").delete().eq("id", id);
+    await supabase.from("replays").delete().eq("id", id);
     load();
   }
 
@@ -274,10 +272,6 @@ function ArenaPanel() {
           <Card className="p-6">
             <h2 className="mb-4 text-lg font-semibold">Publicar vídeo</h2>
             <form onSubmit={uploadVideo} className="grid gap-3 md:grid-cols-2">
-              <div className="md:col-span-2">
-                <Label>Título</Label>
-                <Input value={videoTitle} onChange={(e) => setVideoTitle(e.target.value)} required />
-              </div>
               <div>
                 <Label>Quadra</Label>
                 <select
@@ -307,12 +301,14 @@ function ArenaPanel() {
                 <div key={v.id} className="rounded-lg border border-border bg-muted/20 p-3">
                   <video src={v.video_url} controls className="aspect-video w-full rounded-md bg-black" />
                   <div className="mt-2 flex items-center justify-between gap-2">
-                    <p className="truncate text-sm font-medium">{v.title}</p>
+                    <p className="truncate text-sm font-medium">
+                      {new Date(v.created_at).toLocaleString("pt-BR")}
+                    </p>
                     <Button size="icon" variant="ghost" onClick={() => deleteVideo(v.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                  <VideoActions url={v.video_url} title={v.title} className="mt-2" />
+                  <VideoActions url={v.video_url} title="Replay" className="mt-2" />
                 </div>
               ))}
               {videos.length === 0 && <p className="text-sm text-muted-foreground">Nenhum vídeo publicado.</p>}

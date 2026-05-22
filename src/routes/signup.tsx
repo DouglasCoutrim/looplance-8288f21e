@@ -47,7 +47,7 @@ function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-hero p-4">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-glow">
         <div className="mb-6 flex flex-col items-center">
-          <img src={logoMark} alt="LoopLance" className="h-16 w-16" />
+          <img src={logoMark} alt="LoopLance" className="h-28 w-auto" />
           <h1 className="mt-3 text-2xl font-bold">Criar conta</h1>
           <p className="text-sm text-muted-foreground">Junte-se ao LoopLance</p>
         </div>
