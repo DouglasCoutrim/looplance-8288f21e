@@ -133,7 +133,7 @@ function ArenaDetailPage() {
 
 /* -------------------------------- Quadras -------------------------------- */
 
-interface Court { id: string; name: string; qr_token: string }
+interface Court { id: string; name: string }
 
 function CourtsCard({ arenaId }: { arenaId: string }) {
   const [list, setList] = useState<Court[]>([]);
@@ -141,13 +141,8 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
   const [busy, setBusy] = useState(false);
 
   async function load() {
-    const { data: q } = await supabase.from("quadras").select("id,nome").eq("arena_id", arenaId).order("nome");
-    const mapped = (q ?? []).map((row: any) => ({
-      id: row.id,
-      name: row.nome,
-      qr_token: row.id
-    }));
-    setList(mapped as Court[]);
+    const { data: q } = await supabase.from("courts").select("id,name").eq("arena_id", arenaId).order("name");
+    setList((q ?? []) as Court[]);
   }
   useEffect(() => { load(); }, [arenaId]);
 
