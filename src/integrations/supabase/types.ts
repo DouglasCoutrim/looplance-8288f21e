@@ -32,52 +32,6 @@ export type Database = {
         }
         Relationships: []
       }
-      arena_buttons: {
-        Row: {
-          arena_id: string
-          court_id: string
-          created_at: string
-          id: string
-          status: string
-        }
-        Insert: {
-          arena_id: string
-          court_id: string
-          created_at?: string
-          id?: string
-          status?: string
-        }
-        Update: {
-          arena_id?: string
-          court_id?: string
-          created_at?: string
-          id?: string
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "arena_buttons_arena_id_fkey"
-            columns: ["arena_id"]
-            isOneToOne: false
-            referencedRelation: "arenas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "arena_buttons_arena_id_fkey"
-            columns: ["arena_id"]
-            isOneToOne: false
-            referencedRelation: "public_arenas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "arena_buttons_court_id_fkey"
-            columns: ["court_id"]
-            isOneToOne: false
-            referencedRelation: "courts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       arena_ingest_tokens: {
         Row: {
           arena_id: string
@@ -219,6 +173,97 @@ export type Database = {
         }
         Relationships: []
       }
+      botoes_zero_delay: {
+        Row: {
+          created_at: string
+          id: string
+          numero_botao: number
+          placa_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          numero_botao: number
+          placa_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          numero_botao?: number
+          placa_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "botoes_zero_delay_placa_id_fkey"
+            columns: ["placa_id"]
+            isOneToOne: false
+            referencedRelation: "placas_zero_delay"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cameras: {
+        Row: {
+          arena_id: string
+          botao_id: string | null
+          created_at: string
+          id: string
+          nome: string
+          quadra_id: string
+          rtsp_url: string
+        }
+        Insert: {
+          arena_id: string
+          botao_id?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          quadra_id: string
+          rtsp_url: string
+        }
+        Update: {
+          arena_id?: string
+          botao_id?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          quadra_id?: string
+          rtsp_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cameras_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "arenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cameras_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "public_arenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cameras_botao_id_fkey"
+            columns: ["botao_id"]
+            isOneToOne: true
+            referencedRelation: "botoes_zero_delay"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cameras_quadra_id_fkey"
+            columns: ["quadra_id"]
+            isOneToOne: false
+            referencedRelation: "quadras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courts: {
         Row: {
           arena_id: string
@@ -278,6 +323,42 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      placas_zero_delay: {
+        Row: {
+          arena_id: string
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          arena_id: string
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          arena_id?: string
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "placas_zero_delay_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "arenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "placas_zero_delay_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "public_arenas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
