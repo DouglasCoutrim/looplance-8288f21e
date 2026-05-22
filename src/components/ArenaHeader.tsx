@@ -5,6 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useGamification } from '../hooks/useGamification';
 
 interface ArenaHeaderProps {
+  arenas: any[];
+  quadras: any[];
   selectedArena: string;
   setSelectedArena: (id: string) => void;
   selectedQuadra: string;
@@ -12,38 +14,16 @@ interface ArenaHeaderProps {
 }
 
 export const ArenaHeader = ({ 
+  arenas,
+  quadras,
   selectedArena, 
   setSelectedArena, 
   selectedQuadra, 
   setSelectedQuadra 
 }: ArenaHeaderProps) => {
-  const [arenas, setArenas] = useState<{ id: string; nome: string }[]>([]);
-  const [quadras, setQuadras] = useState<{ id: string; nome: string }[]>([]);
+  const { points } = useGamification();
   const { points } = useGamification();
 
-  useEffect(() => {
-    const fetchArenas = async () => {
-      const { data } = await supabase.from('arenas').select('id, nome').order('nome');
-      if (data) setArenas(data);
-    };
-    fetchArenas();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedArena) {
-      setQuadras([]);
-      return;
-    }
-    const fetchQuadras = async () => {
-      const { data } = await supabase
-        .from('quadras')
-        .select('id, nome')
-        .eq('arena_id', selectedArena)
-        .order('nome');
-      if (data) setQuadras(data);
-    };
-    fetchQuadras();
-  }, [selectedArena]);
 
   return (
     <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md pb-4 pt-6 px-4 border-b border-border/50">

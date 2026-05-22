@@ -15,6 +15,8 @@ export const Route = createFileRoute('/')({
 });
 
 function Index() {
+  const [arenas, setArenas] = useState<any[]>([]);
+  const [quadras, setQuadras] = useState<any[]>([]);
   const [selectedArena, setSelectedArena] = useState<string>('');
   const [selectedQuadra, setSelectedQuadra] = useState<string>('');
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -27,18 +29,57 @@ function Index() {
   const [arenaName, setArenaName] = useState('');
   const [quadraName, setQuadraName] = useState('');
 
+  // Fetch initial arenas
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      const { data: arenasData } = await supabase.from('arenas').select('*').order('nome');
+      if (arenasData && arenasData.length > 0) {
+        setArenas(arenasData);
+        // Default selection if none exists
+        if (!selectedArena) {
+          setSelectedArena(arenasData[0].id);
+          setArenaName(arenasData[0].nome);
+        }
+      }
+    };
+    fetchInitialData();
+  }, []);
+
+  // Fetch quadras when arena changes
   useEffect(() => {
     if (selectedArena) {
-      supabase.from('arenas').select('nome').eq('id', selectedArena).single().then(({ data }) => {
-        if (data) setArenaName(data.nome);
-      });
+      const fetchQuadras = async () => {
+        const { data: quadrasData } = await supabase
+          .from('quadras')
+          .select('*')
+          .eq('arena_id', selectedArena)
+          .order('nome');
+        
+        if (quadrasData) {
+          setQuadras(quadrasData);
+          if (quadrasData.length > 0) {
+            setSelectedQuadra(quadrasData[0].id);
+            setQuadraName(quadrasData[0].nome);
+          } else {
+            setSelectedQuadra('');
+            setQuadraName('');
+          }
+        }
+
+        // Update arena name if needed
+        const currentArena = arenas.find(a => a.id === selectedArena);
+        if (currentArena) setArenaName(currentArena.nome);
+      };
+      fetchQuadras();
     }
+  }, [selectedArena, arenas]);
+
+  useEffect(() => {
     if (selectedQuadra) {
-      supabase.from('quadras').select('nome').eq('id', selectedQuadra).single().then(({ data }) => {
-        if (data) setQuadraName(data.nome);
-      });
+      const currentQuadra = quadras.find(q => q.id === selectedQuadra);
+      if (currentQuadra) setQuadraName(currentQuadra.nome);
     }
-  }, [selectedArena, selectedQuadra]);
+  }, [selectedQuadra, quadras]);
 
   const fetchReplays = async () => {
     if (!selectedQuadra) return;
@@ -115,6 +156,8 @@ function Index() {
       <Toaster position="top-center" />
       
       <ArenaHeader 
+        arenas={arenas}
+        quadras={quadras}
         selectedArena={selectedArena}
         setSelectedArena={setSelectedArena}
         selectedQuadra={selectedQuadra}
