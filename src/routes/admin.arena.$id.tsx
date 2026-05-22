@@ -98,16 +98,16 @@ function ArenaDetailPage() {
         </Card>
       )}
 
-      <Tabs defaultValue="quadras" className="w-full">
+      <Tabs defaultValue="courts" className="w-full">
         <TabsList className="mb-4 flex flex-wrap">
-          <TabsTrigger value="quadras">Quadras</TabsTrigger>
+          <TabsTrigger value="courts">Quadras</TabsTrigger>
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
           <TabsTrigger value="patrocinadores">Patrocinadores</TabsTrigger>
           <TabsTrigger value="whitelabel">White Label</TabsTrigger>
           <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="quadras">
+        <TabsContent value="courts">
           <CourtsCard arenaId={id} />
         </TabsContent>
 
@@ -133,7 +133,7 @@ function ArenaDetailPage() {
 
 /* -------------------------------- Quadras -------------------------------- */
 
-interface Court { id: string; name: string; qr_token: string }
+interface Court { id: string; name: string }
 
 function CourtsCard({ arenaId }: { arenaId: string }) {
   const [list, setList] = useState<Court[]>([]);
@@ -141,13 +141,8 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
   const [busy, setBusy] = useState(false);
 
   async function load() {
-    const { data: q } = await supabase.from("quadras").select("id,nome").eq("arena_id", arenaId).order("nome");
-    const mapped = (q ?? []).map((row: any) => ({
-      id: row.id,
-      name: row.nome,
-      qr_token: row.id
-    }));
-    setList(mapped as Court[]);
+    const { data: q } = await supabase.from("courts").select("id,name").eq("arena_id", arenaId).order("name");
+    setList((q ?? []) as Court[]);
   }
   useEffect(() => { load(); }, [arenaId]);
 
@@ -164,7 +159,7 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
     e.preventDefault();
     if (!name.trim()) return toast.error("Informe o nome");
     setBusy(true);
-    const { error } = await supabase.from("quadras").insert({ arena_id: arenaId, nome: name.trim() });
+    const { error } = await supabase.from("courts").insert({ arena_id: arenaId, name: name.trim() });
     setBusy(false);
     if (error) return toast.error(error.message);
     setName(""); toast.success("Quadra criada"); load(); notify("courts.updated");
@@ -172,7 +167,7 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
 
   async function remove(c: Court) {
     if (!confirm(`Remover quadra "${c.name}"? Isso também remove vídeos.`)) return;
-    const { error } = await supabase.from("quadras").delete().eq("id", c.id);
+    const { error } = await supabase.from("courts").delete().eq("id", c.id);
     if (error) return toast.error(error.message);
     load(); notify("courts.updated");
   }
@@ -180,7 +175,7 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
   async function rename(c: Court, newName: string) {
     const n = newName.trim();
     if (!n || n === c.name) return;
-    const { error } = await supabase.from("quadras").update({ nome: n }).eq("id", c.id);
+    const { error } = await supabase.from("courts").update({ name: n }).eq("id", c.id);
     if (error) return toast.error(error.message);
     load(); notify("courts.updated");
   }

@@ -49,7 +49,7 @@ function AdminPage() {
     const { data: a } = await supabase.from("arenas").select("*").order("created_at", { ascending: false });
     setArenas((a ?? []) as ArenaRow[]);
     const [{ count: c }, { count: v }, { count: u }] = await Promise.all([
-      supabase.from("quadras").select("*", { count: "exact", head: true }),
+      supabase.from("courts").select("*", { count: "exact", head: true }),
       supabase.from("replays").select("*", { count: "exact", head: true }),
       supabase.from("profiles").select("*", { count: "exact", head: true }),
     ]);
@@ -170,7 +170,7 @@ function AdminPage() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Excluir arena "{a.name}"?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Esta ação remove permanentemente a arena e todos os dados vinculados (quadras, vídeos, câmeras, placas, botões e vínculos de usuários). Não pode ser desfeita.
+                                  Esta ação remove permanentemente a arena e todos os dados vinculados (quadras, vídeos, lances e vínculos de usuários). Não pode ser desfeita.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>

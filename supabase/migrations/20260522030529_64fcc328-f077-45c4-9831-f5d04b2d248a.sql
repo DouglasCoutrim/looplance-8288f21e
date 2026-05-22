@@ -1,0 +1,1 @@
+ALTER TABLE public.courts ADD COLUMN IF NOT EXISTS rtsp_url TEXT;

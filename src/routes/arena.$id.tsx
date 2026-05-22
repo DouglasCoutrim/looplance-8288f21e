@@ -27,10 +27,10 @@ interface PublicArena {
   logo_url: string | null; primary_color: string;
   city: string | null; state: string | null;
 }
-interface Quadra { id: string; nome: string }
+interface Court { id: string; name: string }
 interface Replay {
   id: string; video_url: string; thumbnail_url: string | null;
-  data_evento: string; hora_evento: string; quadra_id: string | null;
+  data_evento: string; hora_evento: string; court_id: string | null;
 }
 
 function ArenaDashboard() {
@@ -39,7 +39,7 @@ function ArenaDashboard() {
   const { user } = useAuth();
   const [arena, setArena] = useState<PublicArena | null>(null);
   const [loading, setLoading] = useState(true);
-  const [quadras, setQuadras] = useState<Quadra[]>([]);
+  const [courts, setCourts] = useState<Court[]>([]);
   const [replays, setReplays] = useState<Replay[]>([]);
   const [selected, setSelected] = useState<Replay | null>(null);
   const [editing, setEditing] = useState<Replay | null>(null);
@@ -63,14 +63,14 @@ function ArenaDashboard() {
   useEffect(() => {
     if (!arena?.id) return;
     (async () => {
-      const { data: q } = await supabase.from("quadras").select("id,nome").eq("arena_id", arena.id).order("nome");
-      setQuadras(((q ?? []) as { id: string; nome: string }[]).map((court) => ({ id: court.id, nome: court.nome })));
+      const { data: q } = await supabase.from("courts").select("id,name").eq("arena_id", arena.id).order("name");
+      setCourts((q ?? []) as Court[]);
 
       let rows: any[] = [];
       
       try {
         const { data, error } = await supabase.from("replays")
-          .select("id,video_url,created_at,quadra_id")
+          .select("id,video_url,created_at,court_id")
           .eq("arena_id", arena.id)
           .order("created_at", { ascending: false })
           .limit(500);
@@ -95,7 +95,7 @@ function ArenaDashboard() {
             second: "2-digit",
             hour12: false,
           }),
-          quadra_id: video.quadra_id,
+          court_id: video.court_id,
         };
       });
       setReplays(rs);
@@ -193,7 +193,7 @@ function ArenaDashboard() {
             <div className="mt-3 flex items-center justify-between">
               <div className="text-sm">
                 <p className="font-semibold">
-                  {quadraNome(quadras, selected.quadra_id)} · {selected.hora_evento.slice(0, 5)}
+                  {courtName(courts, selected.court_id)} · {selected.hora_evento.slice(0, 5)}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {format(new Date(selected.data_evento), "dd 'de' MMMM", { locale: ptBR })}
@@ -204,12 +204,12 @@ function ArenaDashboard() {
         </section>
 
         {/* Quadras Disponíveis */}
-        {quadras.length > 0 && (
+        {courts.length > 0 && (
           <section className="mt-6">
             <h2 className="mb-3 text-sm font-extrabold uppercase tracking-wider">Quadras Disponíveis</h2>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {quadras.map((q) => {
-                const items = replays.filter((r) => r.quadra_id === q.id);
+              {courts.map((q) => {
+                const items = replays.filter((r) => r.court_id === q.id);
                 return (
                   <button
                     key={q.id}
@@ -222,7 +222,7 @@ function ArenaDashboard() {
                         <img src={arena.logo_url} alt="" className="absolute inset-0 m-auto h-12 w-12 object-contain opacity-40" />
                       )}
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-2">
-                        <p className="truncate text-sm font-bold text-white">{q.nome}</p>
+                        <p className="truncate text-sm font-bold text-white">{q.name}</p>
                         <p className="text-[10px] text-white/60">{items.length} lance(s)</p>
                       </div>
                     </div>
@@ -250,7 +250,7 @@ function ArenaDashboard() {
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {items.map((r) => (
                       <ThumbCard key={r.id} replay={r} brand={brand} active={selected?.id === r.id}
-                        onSelect={() => setSelected(r)} onEdit={() => setEditing(r)} quadras={quadras} />
+                        onSelect={() => setSelected(r)} onEdit={() => setEditing(r)} courts={courts} />
                     ))}
                   </div>
                 </div>
@@ -258,17 +258,17 @@ function ArenaDashboard() {
             </TabsContent>
 
             <TabsContent value="court" className="mt-4 space-y-6">
-              {quadras.length === 0 && <EmptyVideos />}
-              {quadras.map((q) => {
-                const items = replays.filter((r) => r.quadra_id === q.id);
+              {courts.length === 0 && <EmptyVideos />}
+              {courts.map((q) => {
+                const items = replays.filter((r) => r.court_id === q.id);
                 if (!items.length) return null;
                 return (
                   <div key={q.id}>
-                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{q.nome}</h3>
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{q.name}</h3>
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                       {items.map((r) => (
                         <ThumbCard key={r.id} replay={r} brand={brand} active={selected?.id === r.id}
-                          onSelect={() => setSelected(r)} onEdit={() => setEditing(r)} quadras={quadras} />
+                          onSelect={() => setSelected(r)} onEdit={() => setEditing(r)} courts={courts} />
                       ))}
                     </div>
                   </div>
@@ -371,18 +371,18 @@ function EmptyVideos() {
   );
 }
 
-function quadraNome(quadras: Quadra[], id: string | null) {
+function courtName(courts: Court[], id: string | null) {
   if (!id) return "Quadra";
   // Tenta encontrar por ID exato ou por substring no nome (ex: "1" em "Quadra 1")
-  const found = quadras.find((q) => q.id === id || q.nome.toLowerCase().includes(id.toLowerCase()));
-  return found?.nome ?? `Quadra ${id}`;
+  const found = courts.find((q) => q.id === id || q.name.toLowerCase().includes(id.toLowerCase()));
+  return found?.name ?? `Quadra ${id}`;
 }
 
 function ThumbCard({
-  replay, active, onSelect, onEdit, brand, quadras,
+  replay, active, onSelect, onEdit, brand, courts,
 }: {
   replay: Replay; active: boolean; onSelect: () => void; onEdit: () => void;
-  brand: string; quadras: Quadra[];
+  brand: string; courts: Court[];
 }) {
   return (
     <div className={`group overflow-hidden rounded-xl border bg-card transition ${active ? "ring-2" : "border-border"}`}
@@ -397,10 +397,8 @@ function ThumbCard({
         </span>
       </button>
       <div className="flex items-center justify-between gap-1 p-2">
-        <p className="truncate text-[11px] text-muted-foreground">{quadraNome(quadras, replay.quadra_id)}</p>
+        <p className="truncate text-[11px] text-muted-foreground">{courtName(courts, replay.court_id)}</p>
       </div>
     </div>
   );
 }
-
-function clamp(n: number, min: number, max: number) { return Math.min(Math.max(n, min), max); }

@@ -16,7 +16,7 @@ import { VideoActions } from "@/components/VideoActions";
 export const Route = createFileRoute("/painel")({ component: ArenaPanel });
 
 interface Arena { id: string; name: string; slug: string; logo_url: string | null; primary_color: string; city: string | null; state: string | null; }
-interface Court { id: string; name: string; qr_token: string; rtsp_url: string | null; }
+interface Court { id: string; name: string; rtsp_url: string | null; }
 interface Video { id: string; title: string; video_url: string; court_id: string | null; created_at: string; }
 
 function ArenaPanel() {
@@ -28,31 +28,24 @@ function ArenaPanel() {
   const [arenaName, setArenaName] = useState("");
   const [arenaCity, setArenaCity] = useState("");
   const [arenaState, setArenaState] = useState("");
-  const [uploading, setUploading] = useState(false);
   const logoRef = useRef<HTMLInputElement>(null);
 
   async function load() {
     if (!adminArenaId) return;
     const [{ data: a }, { data: q }, { data: v }] = await Promise.all([
       supabase.from("arenas").select("*").eq("id", adminArenaId).maybeSingle(),
-      supabase.from("quadras").select("id, arena_id, nome, rtsp_url").eq("arena_id", adminArenaId).order("nome").then((res: any) => res, () => ({ data: [] })),
+      supabase.from("courts").select("id, arena_id, name, rtsp_url").eq("arena_id", adminArenaId).order("name").then((res: any) => res, () => ({ data: [] })),
       supabase.from("replays").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }).then((res: any) => res, () => ({ data: [] })),
     ]);
     if (a) { setArena(a as Arena); setArenaName(a.name); setArenaCity((a as Arena).city ?? ""); setArenaState((a as Arena).state ?? ""); }
     
-    const mappedCourts = (q ?? []).map((row: any) => ({
-      id: row.id,
-      name: row.nome,
-      qr_token: row.id,
-      rtsp_url: row.rtsp_url
-    }));
-    setCourts(mappedCourts as Court[]);
+    setCourts((q ?? []) as Court[]);
     
     const mappedVideos = (v ?? []).map((row: any) => ({
       id: row.id,
       title: "Replay",
       video_url: row.video_url,
-      court_id: row.quadra_id,
+      court_id: row.court_id,
       created_at: row.created_at
     }));
     setVideos(mappedVideos as Video[]);
@@ -90,7 +83,7 @@ function ArenaPanel() {
   async function addCourt(e: React.FormEvent) {
     e.preventDefault();
     if (!arena) return;
-    const { error } = await supabase.from("quadras").insert({ arena_id: arena.id, nome: newCourt });
+    const { error } = await supabase.from("courts").insert({ arena_id: arena.id, name: newCourt });
     if (error) {
        toast.error(error.message);
     }
@@ -99,12 +92,12 @@ function ArenaPanel() {
 
   async function removeCourt(id: string) {
     if (!confirm("Excluir esta quadra?")) return;
-    await supabase.from("quadras").delete().eq("id", id);
+    await supabase.from("courts").delete().eq("id", id);
     load();
   }
 
   async function updateCourtRtsp(id: string, newRtsp: string) {
-    const { error } = await supabase.from("quadras").update({ rtsp_url: newRtsp }).eq("id", id);
+    const { error } = await supabase.from("courts").update({ rtsp_url: newRtsp }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("URL RTSP atualizada");
     load();
@@ -114,7 +107,7 @@ function ArenaPanel() {
     if (!arena) return;
     const { error } = await supabase.from("arena_buttons").insert({
       arena_id: arena.id,
-      quadra_id: courtId,
+      court_id: courtId,
       status: "disparado"
     });
     if (error) {
@@ -140,7 +133,7 @@ function ArenaPanel() {
   }
 
   if (!arena) return <FullLoader />;
-  const playerUrl = (token: string) => `${window.location.origin}/arena/${arena.id}?q=${token}`;
+  const playerUrl = (courtId: string) => `${window.location.origin}/arena/${arena.id}?q=${courtId}`;
 
   return (
     <AppShell title={`Painel · ${arena.name}`}>
@@ -214,9 +207,9 @@ function ArenaPanel() {
                     </Button>
                   </div>
                   <div className="flex justify-center rounded-lg bg-white p-3">
-                    <QRCodeCanvas id={`qr-${c.id}`} value={playerUrl(c.qr_token)} size={160} />
+                    <QRCodeCanvas id={`qr-${c.id}`} value={playerUrl(c.id)} size={160} />
                   </div>
-                  <p className="mt-2 break-all text-center text-[10px] text-muted-foreground">{playerUrl(c.qr_token)}</p>
+                  <p className="mt-2 break-all text-center text-[10px] text-muted-foreground">{playerUrl(c.id)}</p>
                   <Button variant="outline" size="sm" className="mt-3 w-full" onClick={() => downloadQR(c.id)}>
                     <Download className="mr-2 h-4 w-4" /> Baixar QR
                   </Button>
