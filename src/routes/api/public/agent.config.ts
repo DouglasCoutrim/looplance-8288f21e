@@ -44,31 +44,15 @@ export const Route = createFileRoute('/api/public/agent/config')({
         const arenaId = tokenRow.arena_id;
 
         // Load arena scope in parallel
-        const [arenaRes, camerasRes, buttonsRes, boardsRes, courtsRes, courtCamerasRes] = await Promise.all([
+        const [arenaRes, courtsRes] = await Promise.all([
           supabaseAdmin
             .from('arenas')
             .select('id, name, slug, active, videos_bucket, retention_days, supabase_url, supabase_anon_key, supabase_service_key, config_version')
             .eq('id', arenaId)
             .maybeSingle(),
           supabaseAdmin
-            .from('cameras')
-            .select('id, name, rtsp_url, button_id')
-            .eq('arena_id', arenaId),
-          supabaseAdmin
-            .from('arena_buttons')
-            .select('id, board_id, button_number, hardware_pin, label, camera_id')
-            .eq('arena_id', arenaId),
-          supabaseAdmin
-            .from('zero_delay_boards')
-            .select('id, name, serial, model')
-            .eq('arena_id', arenaId),
-          supabaseAdmin
             .from('courts')
-            .select('id, name, qr_token')
-            .eq('arena_id', arenaId),
-          supabaseAdmin
-            .from('court_cameras')
-            .select('id, court_id, camera_id')
+            .select('id, name, qr_token, rtsp_url')
             .eq('arena_id', arenaId),
         ]);
 
@@ -86,11 +70,11 @@ export const Route = createFileRoute('/api/public/agent/config')({
             generated_at: new Date().toISOString(),
             config_version: (arenaRes.data as any).config_version ?? 0,
             arena: arenaRes.data,
-            cameras: camerasRes.data ?? [],
-            buttons: buttonsRes.data ?? [],
-            boards: boardsRes.data ?? [],
+            cameras: [],
+            buttons: [],
+            boards: [],
             courts: courtsRes.data ?? [],
-            court_cameras: courtCamerasRes.data ?? [],
+            court_cameras: [],
           }),
           { status: 200, headers: cors },
         );

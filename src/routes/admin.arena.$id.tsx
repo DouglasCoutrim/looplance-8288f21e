@@ -25,14 +25,12 @@ interface Arena {
   retention_days: number | null;
 }
 interface Sponsor { id: string; name: string; logo_url: string; link_url: string | null; display_order: number }
-interface CamRow { id: string; name: string; rtsp_url: string; button_id: string | null }
 interface UserRow { user_id: string; role: string; full_name: string | null }
 
 function ArenaDetailPage() {
   const { id } = Route.useParams();
   const { user, loading, isSuperAdmin } = useAuth();
   const [arena, setArena] = useState<Arena | null>(null);
-  const [cameras, setCameras] = useState<CamRow[]>([]);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -50,13 +48,10 @@ function ArenaDetailPage() {
       return;
     }
     setArena(a as Arena | null);
-    const [{ data: c, error: cErr }, { data: ur, error: urErr }] = await Promise.all([
-      supabase.from("cameras").select("id,name,rtsp_url,button_id").eq("arena_id", id).order("name"),
+    const [{ data: ur, error: urErr }] = await Promise.all([
       supabase.from("user_roles").select("user_id,role").eq("arena_id", id),
     ]);
-    const firstError = cErr ?? urErr;
-    if (firstError) setLoadError(firstError.message);
-    setCameras((c ?? []) as CamRow[]);
+    if (urErr) setLoadError(urErr.message);
     const rows = (ur ?? []) as { user_id: string; role: string }[];
     if (rows.length) {
       const ids = rows.map((r) => r.user_id);
@@ -107,7 +102,6 @@ function ArenaDetailPage() {
       <Tabs defaultValue="quadras" className="w-full">
         <TabsList className="mb-4 flex flex-wrap">
           <TabsTrigger value="quadras">Quadras</TabsTrigger>
-          <TabsTrigger value="cameras">Câmeras</TabsTrigger>
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
           <TabsTrigger value="patrocinadores">Patrocinadores</TabsTrigger>
           <TabsTrigger value="whitelabel">White Label</TabsTrigger>
@@ -115,11 +109,7 @@ function ArenaDetailPage() {
         </TabsList>
 
         <TabsContent value="quadras">
-          <CourtsCard arenaId={id} cameras={cameras} />
-        </TabsContent>
-
-        <TabsContent value="cameras">
-          <CamerasReadOnly cameras={cameras} />
+          <CourtsCard arenaId={id} />
         </TabsContent>
 
         <TabsContent value="usuarios">
@@ -144,25 +134,20 @@ function ArenaDetailPage() {
 
 /* -------------------------------- Quadras -------------------------------- */
 
-interface Court { id: string; name: string; qr_token: string }
+interface Court { id: string; name: string; qr_token: string; rtsp_url: string | null }
 
-function CourtsCard({ arenaId, cameras }: { arenaId: string; cameras: CamRow[] }) {
+function CourtsCard({ arenaId }: { arenaId: string }) {
   const [list, setList] = useState<Court[]>([]);
-  const [links, setLinks] = useState<{ court_id: string; camera_id: string }[]>([]);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function load() {
-    const [{ data: c }, { data: l }] = await Promise.all([
-      supabase.from("courts").select("id,name,qr_token").eq("arena_id", arenaId).order("name"),
-      supabase.from("court_cameras").select("court_id,camera_id").eq("arena_id", arenaId),
-    ]);
+    const { data: c } = await supabase.from("courts").select("id,name,qr_token,rtsp_url").eq("arena_id", arenaId).order("name");
     setList((c ?? []) as Court[]);
-    setLinks((l ?? []) as any);
   }
   useEffect(() => { load(); }, [arenaId]);
 
-  async function notify(reason: "courts.updated" | "court_cameras.updated") {
+  async function notify(reason: "courts.updated") {
     try {
       const { notifyArenaAgent } = await import("@/lib/agent-notify.functions");
       await notifyArenaAgent({ data: { arenaId, reason } });
@@ -188,30 +173,28 @@ function CourtsCard({ arenaId, cameras }: { arenaId: string; cameras: CamRow[] }
     load(); notify("courts.updated");
   }
 
-  async function rename(c: Court, newName: string) {
-    const n = newName.trim();
-    if (!n || n === c.name) return;
-    const { error } = await supabase.from("courts").update({ name: n }).eq("id", c.id);
+  async function updateCourt(c: Court, updates: Partial<Court>) {
+    const { error } = await supabase.from("courts").update(updates).eq("id", c.id);
     if (error) return toast.error(error.message);
     load(); notify("courts.updated");
   }
 
-  async function setCourtCamera(courtId: string, cameraId: string | null) {
-    await supabase.from("court_cameras").delete().eq("court_id", courtId);
-    if (cameraId) {
-      const { error } = await supabase.from("court_cameras").insert({
-        court_id: courtId, camera_id: cameraId, arena_id: arenaId,
-      });
-      if (error) return toast.error(error.message);
-    }
-    load(); notify("court_cameras.updated");
+  async function testReplay(courtId: string) {
+    const { error } = await supabase.from("arena_buttons").insert({
+      arena_id: arenaId,
+      quadra_id: courtId,
+      status: "disparado",
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Sinal de gatilho enviado com sucesso!");
   }
+
 
   return (
     <Card className="p-6">
       <h2 className="mb-1 text-lg font-semibold">Quadras desta arena</h2>
       <p className="mb-4 text-sm text-muted-foreground">
-        Cadastre as quadras e vincule a câmera responsável por cada uma. O nome aparece nos replays.
+        Cadastre as quadras e defina o link RTSP de cada uma.
       </p>
 
       <form onSubmit={add} className="mb-6 grid gap-2 md:grid-cols-[1fr_auto]">
@@ -224,23 +207,31 @@ function CourtsCard({ arenaId, cameras }: { arenaId: string; cameras: CamRow[] }
       ) : (
         <ul className="space-y-2">
           {list.map((c) => {
-            const linked = links.find((l) => l.court_id === c.id)?.camera_id ?? "";
             return (
-              <li key={c.id} className="grid gap-2 rounded-lg border border-border p-3 md:grid-cols-[1fr_240px_auto] md:items-center">
-                <Input
-                  defaultValue={c.name}
-                  onBlur={(e) => rename(c, e.target.value)}
-                />
-                <Select value={linked || "none"} onValueChange={(v) => setCourtCamera(c.id, v === "none" ? null : v)}>
-                  <SelectTrigger><SelectValue placeholder="Câmera vinculada" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Sem câmera</SelectItem>
-                    {cameras.map((cam) => (
-                      <SelectItem key={cam.id} value={cam.id}>{cam.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button size="icon" variant="ghost" onClick={() => remove(c)}><Trash2 className="h-4 w-4" /></Button>
+              <li key={c.id} className="grid gap-4 rounded-lg border border-border p-4 md:grid-cols-[1fr_2fr_auto] md:items-center">
+                <div className="space-y-1">
+                  <Label className="text-xs">Nome da Quadra</Label>
+                  <Input
+                    defaultValue={c.name}
+                    onBlur={(e) => updateCourt(c, { name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">URL RTSP</Label>
+                  <Input
+                    defaultValue={c.rtsp_url || ""}
+                    placeholder="rtsp://..."
+                    onBlur={(e) => updateCourt(c, { rtsp_url: e.target.value })}
+                  />
+                </div>
+                <div className="flex items-end gap-2">
+                  <Button size="sm" variant="outline" onClick={() => testReplay(c.id)}>
+                    Testar Replay
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={() => remove(c)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </li>
             );
           })}
@@ -250,51 +241,6 @@ function CourtsCard({ arenaId, cameras }: { arenaId: string; cameras: CamRow[] }
   );
 }
 
-/* -------------------- Cameras read-only (visão do dono) -------------------- */
-
-function CamerasReadOnly({ cameras }: { cameras: CamRow[] }) {
-  const statusOf = (c: CamRow): "online" | "offline" =>
-    /^rtsps?:\/\/.+/i.test(c.rtsp_url) && Boolean(c.button_id) ? "online" : "offline";
-
-  return (
-    <Card className="p-6">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold">Câmeras desta arena</h2>
-        <p className="text-sm text-muted-foreground">
-          Cadastro e mapeamento são gerenciados pelo Super Admin em <Link to="/admin/infra" className="text-primary underline">Infra Global</Link>.
-        </p>
-      </div>
-      <div className="space-y-2">
-        {cameras.map((c) => {
-          const st = statusOf(c);
-          return (
-            <div key={c.id} className="flex items-start justify-between gap-3 rounded-lg border border-border p-3">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium">{c.name}</p>
-                  {st === "online" ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-500">
-                      <Wifi className="h-3 w-3" /> Online
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 text-xs text-destructive">
-                      <WifiOff className="h-3 w-3" /> Offline
-                    </span>
-                  )}
-                </div>
-                <p className="truncate text-xs text-muted-foreground">{c.rtsp_url}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {c.button_id ? "Vinculada a um pino físico" : "Sem pino vinculado"}
-                </p>
-              </div>
-            </div>
-          );
-        })}
-        {cameras.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma câmera vinculada a esta arena.</p>}
-      </div>
-    </Card>
-  );
-}
 
 /* ----------------------------- Patrocinadores ----------------------------- */
 

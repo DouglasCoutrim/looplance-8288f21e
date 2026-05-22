@@ -8,10 +8,6 @@ const Schema = z.object({
   reason: z.enum([
     "arena.updated",
     "courts.updated",
-    "cameras.updated",
-    "court_cameras.updated",
-    "boards.updated",
-    "buttons.updated",
   ]),
 });
 
