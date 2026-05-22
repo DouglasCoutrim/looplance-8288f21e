@@ -98,16 +98,16 @@ function ArenaDetailPage() {
         </Card>
       )}
 
-      <Tabs defaultValue="quadras" className="w-full">
+      <Tabs defaultValue="courts" className="w-full">
         <TabsList className="mb-4 flex flex-wrap">
-          <TabsTrigger value="quadras">Quadras</TabsTrigger>
+          <TabsTrigger value="courts">Quadras</TabsTrigger>
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
           <TabsTrigger value="patrocinadores">Patrocinadores</TabsTrigger>
           <TabsTrigger value="whitelabel">White Label</TabsTrigger>
           <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="quadras">
+        <TabsContent value="courts">
           <CourtsCard arenaId={id} />
         </TabsContent>
 
