@@ -3,8 +3,6 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 export type AgentNotifyReason =
   | "arena.updated"
   | "courts.updated"
-  | "cameras.updated"
-  | "court_cameras.updated"
   | "boards.updated"
   | "buttons.updated";
 

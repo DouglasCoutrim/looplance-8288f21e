@@ -51,8 +51,8 @@ export const Route = createFileRoute('/api/public/agent/config')({
             .eq('id', arenaId)
             .maybeSingle(),
           supabaseAdmin
-            .from('quadras' as any)
-            .select('id, nome, rtsp_url')
+            .from('courts' as any)
+            .select('id, name, rtsp_url')
             .eq('arena_id', arenaId)
             .then((res: any) => res, () => ({ data: [] })),
         ]);
