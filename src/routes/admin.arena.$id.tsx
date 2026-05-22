@@ -30,7 +30,7 @@ interface UserRow { user_id: string; role: string; full_name: string | null }
 
 function ArenaDetailPage() {
   const { id } = Route.useParams();
-  const { user, loading, isSuperAdmin } = useAuth();
+  const { user, loading, isSuperAdmin, adminArenaId } = useAuth();
   const [arena, setArena] = useState<Arena | null>(null);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
@@ -61,11 +61,11 @@ function ArenaDetailPage() {
     setPageLoading(false);
   }
 
-  useEffect(() => { if (isSuperAdmin) load(); }, [isSuperAdmin, id]);
+  useEffect(() => { if (isSuperAdmin || adminArenaId === id) load(); }, [isSuperAdmin, adminArenaId, id]);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   if (!user) return <Navigate to="/login" />;
-  if (!isSuperAdmin) return <Navigate to="/acesso-negado" />;
+  if (!isSuperAdmin && adminArenaId !== id) return <Navigate to="/acesso-negado" />;
   if (pageLoading) return <AppShell><div className="flex min-h-[50vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></AppShell>;
   if (!arena) return <AppShell><p className="text-muted-foreground">Arena não encontrada.</p></AppShell>;
 
