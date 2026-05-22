@@ -380,9 +380,10 @@ function BoardsCard({ arenaId }: { arenaId: string }) {
 
 interface Camera {
   id: string;
-  name: string;
+  nome: string;
   rtsp_url: string;
-  button_id: string | null;
+  botao_id: string | null;
+  quadra_id: string;
   created_at: string;
 }
 
@@ -390,10 +391,11 @@ interface ButtonRow {
   id: string;
   label: string;
   board_name?: string;
+  status: string;
 }
 
 function CamerasCard({ arenaId }: { arenaId: string }) {
-  const [list, setList] = useState<(Camera & { button_label?: string; court_names?: string[]; court_ids?: string[] })[]>([]);
+  const [list, setList] = useState<(Camera & { button_label?: string; court_name?: string })[]>([]);
   const [buttons, setButtons] = useState<ButtonRow[]>([]);
   const [courts, setCourts] = useState<{ id: string; name: string }[]>([]);
   
@@ -431,7 +433,7 @@ function CamerasCard({ arenaId }: { arenaId: string }) {
         button_label: btn ? (btn.board_name ? `${btn.board_name} - ${btn.label}` : btn.label) : "Nenhum",
         court_name: courtsMap.get(c.quadra_id) ?? "Nenhuma"
       };
-    });
+    }) as (Camera & { button_label: string; court_name: string })[];
 
     setList(camerasList);
   }
