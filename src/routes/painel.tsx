@@ -301,12 +301,14 @@ function ArenaPanel() {
                 <div key={v.id} className="rounded-lg border border-border bg-muted/20 p-3">
                   <video src={v.video_url} controls className="aspect-video w-full rounded-md bg-black" />
                   <div className="mt-2 flex items-center justify-between gap-2">
-                    <p className="truncate text-sm font-medium">{v.title}</p>
+                    <p className="truncate text-sm font-medium">
+                      {new Date(v.created_at).toLocaleString("pt-BR")}
+                    </p>
                     <Button size="icon" variant="ghost" onClick={() => deleteVideo(v.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                  <VideoActions url={v.video_url} title={v.title} className="mt-2" />
+                  <VideoActions url={v.video_url} title="Replay" className="mt-2" />
                 </div>
               ))}
               {videos.length === 0 && <p className="text-sm text-muted-foreground">Nenhum vídeo publicado.</p>}
