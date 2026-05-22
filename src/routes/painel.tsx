@@ -33,25 +33,23 @@ function ArenaPanel() {
 
   async function load() {
     if (!adminArenaId) return;
-    const [{ data: a }, { data: q }, { data: v }, { data: mapData }] = await Promise.all([
+    const [{ data: a }, { data: q }, { data: v }, { data: cams }] = await Promise.all([
       supabase.from("arenas").select("*").eq("id", adminArenaId).maybeSingle(),
       supabase.from("quadras").select("id, arena_id, nome").eq("arena_id", adminArenaId).order("nome").then((res: any) => res, () => ({ data: [] })),
       supabase.from("replays").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }).then((res: any) => res, () => ({ data: [] })),
-      supabase.from("court_cameras" as any).select("court_id, cameras(id, name, rtsp_url)").eq("arena_id", adminArenaId).then((res: any) => res, () => ({ data: [] })),
+      supabase.from("cameras").select("id, quadra_id, name, rtsp_url").eq("arena_id", adminArenaId).then((res: any) => res, () => ({ data: [] })),
     ]);
     if (a) { setArena(a as Arena); setArenaName(a.name); setArenaCity((a as Arena).city ?? ""); setArenaState((a as Arena).state ?? ""); }
     
     const courtCamsMap = new Map<string, { id: string; name: string; rtsp_url: string }[]>();
-    (mapData ?? []).forEach((row: any) => {
-      if (row.cameras) {
-        const cams = courtCamsMap.get(row.court_id) ?? [];
-        cams.push({
-          id: row.cameras.id,
-          name: row.cameras.name,
-          rtsp_url: row.cameras.rtsp_url
+    (cams ?? []).forEach((cam: any) => {
+        const list = courtCamsMap.get(cam.quadra_id) ?? [];
+        list.push({
+          id: cam.id,
+          name: cam.name,
+          rtsp_url: cam.rtsp_url
         });
-        courtCamsMap.set(row.court_id, cams);
-      }
+        courtCamsMap.set(cam.quadra_id, list);
     });
     
     const mappedCourts = (q ?? []).map((row: any) => ({
@@ -119,18 +117,9 @@ function ArenaPanel() {
 
 
 
+  // triggerReplay obsoleto com nova arquitetura
   async function triggerReplay(courtId: string) {
-    if (!arena) return;
-    const { error } = await supabase.from("arena_buttons").insert({
-      arena_id: arena.id,
-      quadra_id: courtId,
-      status: "disparado"
-    });
-    if (error) {
-      toast.error(`Falha ao disparar: ${error.message}`);
-      return;
-    }
-    toast.success("Sinal de replay enviado ao agente local!");
+    toast.info("O sistema agora gera replays automaticamente.");
   }
 
   async function deleteVideo(id: string) {
