@@ -139,7 +139,7 @@ function ArenaPanel() {
 
   async function deleteVideo(id: string) {
     if (!confirm("Excluir este vídeo?")) return;
-    await supabase.from("videos").delete().eq("id", id);
+    await supabase.from("replays").delete().eq("id", id);
     load();
   }
 
