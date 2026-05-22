@@ -16,38 +16,38 @@ export type Database = {
     Tables: {
       arenas: {
         Row: {
-          cidade: string
+          created_at: string
           id: string
-          logo_url: string | null
           nome: string
         }
         Insert: {
-          cidade: string
+          created_at?: string
           id?: string
-          logo_url?: string | null
           nome: string
         }
         Update: {
-          cidade?: string
+          created_at?: string
           id?: string
-          logo_url?: string | null
           nome?: string
         }
         Relationships: []
       }
       quadras: {
         Row: {
-          arena_id: string | null
+          arena_id: string
+          created_at: string
           id: string
           nome: string
         }
         Insert: {
-          arena_id?: string | null
+          arena_id: string
+          created_at?: string
           id?: string
           nome: string
         }
         Update: {
-          arena_id?: string | null
+          arena_id?: string
+          created_at?: string
           id?: string
           nome?: string
         }
@@ -63,24 +63,21 @@ export type Database = {
       }
       replays: {
         Row: {
-          criado_em: string | null
-          duracao_segundos: number | null
+          created_at: string
           id: string
-          quadra_id: string | null
+          quadra_id: string
           video_url: string
         }
         Insert: {
-          criado_em?: string | null
-          duracao_segundos?: number | null
+          created_at?: string
           id?: string
-          quadra_id?: string | null
+          quadra_id: string
           video_url: string
         }
         Update: {
-          criado_em?: string | null
-          duracao_segundos?: number | null
+          created_at?: string
           id?: string
-          quadra_id?: string | null
+          quadra_id?: string
           video_url?: string
         }
         Relationships: [

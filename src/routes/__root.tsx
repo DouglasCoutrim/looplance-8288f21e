@@ -76,7 +76,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "LoopLance — Repita a emoção" },
       { name: "description", content: "Plataforma de replays esportivos." },
-      { name: "theme-color", content: "#FF6600" },
+      { name: "theme-color", content: "#ADFF2F" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
