@@ -170,7 +170,7 @@ function AdminPage() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Excluir arena "{a.name}"?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Esta ação remove permanentemente a arena e todos os dados vinculados (quadras, vídeos, câmeras, placas, botões e vínculos de usuários). Não pode ser desfeita.
+                                  Esta ação remove permanentemente a arena e todos os dados vinculados (quadras, vídeos, lances e vínculos de usuários). Não pode ser desfeita.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
