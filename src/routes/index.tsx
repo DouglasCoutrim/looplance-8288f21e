@@ -128,7 +128,15 @@ function Index() {
         setStartTime={setStartTime}
       />
 
-      <main className="px-4 py-2 space-y-4">
+      <main className="px-4 py-2 space-y-6">
+        {selectedQuadra && (
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+              {session?.quadraId === selectedQuadra ? '🔴 Sessão Ativa' : 'Últimos Lances'}
+            </h2>
+            <div className="h-px flex-1 bg-border/50 ml-4" />
+          </div>
+        )}
         {isLoading ? (
           Array(3).fill(0).map((_, i) => (
             <div key={i} className="space-y-3">
