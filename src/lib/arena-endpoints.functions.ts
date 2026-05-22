@@ -25,14 +25,14 @@ export const listArenaEndpoints = createServerFn({ method: "GET" }).handler(
     if (arenas.length === 0) return [];
 
     const { data: courtsData } = await supabaseAdmin
-      .from("courts")
-      .select("id, name, arena_id")
+      .from("quadras")
+      .select("id, nome, arena_id")
       .in("arena_id", arenas.map((a) => a.id));
 
     const courtsByArena = new Map<string, ArenaCourt[]>();
     for (const c of courtsData ?? []) {
       const list = courtsByArena.get(c.arena_id) ?? [];
-      list.push({ id: c.id, name: c.name });
+      list.push({ id: c.id, name: c.nome });
       courtsByArena.set(c.arena_id, list);
     }
 
