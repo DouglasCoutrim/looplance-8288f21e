@@ -38,7 +38,7 @@ export const updateArenaConnection = createServerFn({ method: "POST" })
       retention_days: data.retention_days,
     };
 
-    const { error } = await supabaseAdmin.from("arenas").update(update).eq("id", data.arenaId);
+    const { error } = await context.supabase.from("arenas").update(update).eq("id", data.arenaId);
     if (error) throw new Error(error.message);
 
     return { ok: true };
@@ -50,7 +50,7 @@ export const getRetentionSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertSuper(context.supabase, context.userId);
-    const { data } = await supabaseAdmin.from("app_settings").select("value").eq("key", "default_retention_days").maybeSingle();
+    const { data } = await context.supabase.from("app_settings").select("value").eq("key", "default_retention_days").maybeSingle();
     const value = data?.value as unknown;
     const days = typeof value === "number" ? value : 30;
     return { default_retention_days: days };
@@ -63,7 +63,7 @@ export const updateRetentionSettings = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => RetSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertSuper(context.supabase, context.userId);
-    const { error } = await supabaseAdmin
+    const { error } = await context.supabase
       .from("app_settings")
       .upsert({ key: "default_retention_days", value: data.default_retention_days as any, updated_at: new Date().toISOString() }, { onConflict: "key" });
     if (error) throw new Error(error.message);
@@ -90,7 +90,7 @@ export const listArenaIngestTokens = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ArenaIdSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertArenaAdminOrSuper(context.supabase, context.userId, data.arenaId);
-    const { data: rows, error } = await supabaseAdmin
+    const { data: rows, error } = await context.supabase
       .from("arena_ingest_tokens")
       .select("id, name, token_prefix, created_at, last_used_at, revoked_at")
       .eq("arena_id", data.arenaId)
@@ -113,7 +113,7 @@ export const createArenaIngestToken = createServerFn({ method: "POST" })
     const token = `lov_ing_${raw}`;
     const token_hash = createHash("sha256").update(token).digest("hex");
     const token_prefix = token.slice(0, 12);
-    const { data: row, error } = await supabaseAdmin
+    const { data: row, error } = await context.supabase
       .from("arena_ingest_tokens")
       .insert({
         arena_id: data.arenaId,
@@ -138,7 +138,7 @@ export const revokeArenaIngestToken = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => RevokeTokenSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertArenaAdminOrSuper(context.supabase, context.userId, data.arenaId);
-    const { error } = await supabaseAdmin
+    const { error } = await context.supabase
       .from("arena_ingest_tokens")
       .update({ revoked_at: new Date().toISOString() })
       .eq("id", data.tokenId)
