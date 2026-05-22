@@ -33,66 +33,10 @@ export type Database = {
         Relationships: []
       }
       arena_buttons: {
-        Row: {
-          arena_id: string
-          board_id: string | null
-          button_number: number | null
-          camera_id: string | null
-          created_at: string
-          hardware_pin: string | null
-          id: string
-          label: string
-        }
-        Insert: {
-          arena_id: string
-          board_id?: string | null
-          button_number?: number | null
-          camera_id?: string | null
-          created_at?: string
-          hardware_pin?: string | null
-          id?: string
-          label: string
-        }
-        Update: {
-          arena_id?: string
-          board_id?: string | null
-          button_number?: number | null
-          camera_id?: string | null
-          created_at?: string
-          hardware_pin?: string | null
-          id?: string
-          label?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "arena_buttons_arena_id_fkey"
-            columns: ["arena_id"]
-            isOneToOne: false
-            referencedRelation: "arenas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "arena_buttons_arena_id_fkey"
-            columns: ["arena_id"]
-            isOneToOne: false
-            referencedRelation: "public_arenas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "arena_buttons_board_id_fkey"
-            columns: ["board_id"]
-            isOneToOne: false
-            referencedRelation: "zero_delay_boards"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "arena_buttons_camera_id_fkey"
-            columns: ["camera_id"]
-            isOneToOne: false
-            referencedRelation: "cameras"
-            referencedColumns: ["id"]
-          },
-        ]
+        Row: { id: string; arena_id: string; quadra_id: string | null; status: string; created_at: string }
+        Insert: { id?: string; arena_id: string; quadra_id?: string | null; status: string; created_at?: string }
+        Update: { id?: string; arena_id?: string; quadra_id?: string | null; status?: string; created_at?: string }
+        Relationships: []
       }
       arena_ingest_tokens: {
         Row: {
@@ -441,6 +385,18 @@ export type Database = {
           full_name?: string | null
           id?: string
         }
+        Relationships: []
+      }
+      quadras: {
+        Row: { id: string; arena_id: string; nome: string; rtsp_url: string | null; created_at: string }
+        Insert: { id?: string; arena_id: string; nome: string; rtsp_url?: string | null; created_at?: string }
+        Update: { id?: string; arena_id?: string; nome?: string; rtsp_url?: string | null; created_at?: string }
+        Relationships: []
+      }
+      replays: {
+        Row: { id: string; arena_id: string; quadra_id: string | null; video_url: string; created_at: string }
+        Insert: { id?: string; arena_id: string; quadra_id?: string | null; video_url: string; created_at?: string }
+        Update: { id?: string; arena_id?: string; quadra_id?: string | null; video_url?: string; created_at?: string }
         Relationships: []
       }
       user_roles: {

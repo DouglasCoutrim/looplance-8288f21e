@@ -29,34 +29,25 @@ function ArenaPanel() {
   const [arenaCity, setArenaCity] = useState("");
   const [arenaState, setArenaState] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [videoTitle, setVideoTitle] = useState("");
-  const [videoCourtId, setVideoCourtId] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null);
   const logoRef = useRef<HTMLInputElement>(null);
 
   async function load() {
     if (!adminArenaId) return;
-    // Map the database table 'quadras' to the frontend 'courts' if needed. Assuming the frontend relies on the table being named 'courts' or 'quadras'.
-    // The previous code queried 'courts'. I'll stick to 'courts' assuming Lovable created 'courts' but the user referred to 'quadras' in python.
-    // Wait, in Python we used 'quadras'. The frontend was using 'courts'. If they are different tables, they won't match!
-    // But since this is a refactor, I will query 'quadras'.
     const [{ data: a }, { data: q }, { data: v }] = await Promise.all([
       supabase.from("arenas").select("*").eq("id", adminArenaId).maybeSingle(),
-      supabase.from("quadras").select("id, arena_id, nome, rtsp_url").eq("arena_id", adminArenaId).order("nome").catch(() => ({ data: [] })),
-      supabase.from("replays").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }).catch(() => ({ data: [] })),
+      supabase.from("quadras").select("id, arena_id, nome, rtsp_url").eq("arena_id", adminArenaId).order("nome").then((res: any) => res, () => ({ data: [] })),
+      supabase.from("replays").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }).then((res: any) => res, () => ({ data: [] })),
     ]);
     if (a) { setArena(a as Arena); setArenaName(a.name); setArenaCity((a as Arena).city ?? ""); setArenaState((a as Arena).state ?? ""); }
     
-    // Map 'quadras' to 'courts' array for compatibility with the component state.
     const mappedCourts = (q ?? []).map((row: any) => ({
       id: row.id,
       name: row.nome,
-      qr_token: row.id, // using id as token for simplicity if token is missing
+      qr_token: row.id,
       rtsp_url: row.rtsp_url
     }));
     setCourts(mappedCourts as Court[]);
     
-    // Map 'replays' to 'videos' array
     const mappedVideos = (v ?? []).map((row: any) => ({
       id: row.id,
       title: "Replay",
@@ -101,15 +92,14 @@ function ArenaPanel() {
     if (!arena) return;
     const { error } = await supabase.from("quadras").insert({ arena_id: arena.id, nome: newCourt });
     if (error) {
-       // fallback if the table is actually 'courts'
-       await supabase.from("courts").insert({ arena_id: arena.id, name: newCourt });
+       toast.error(error.message);
     }
     setNewCourt(""); load();
   }
 
   async function removeCourt(id: string) {
     if (!confirm("Excluir esta quadra?")) return;
-    await supabase.from("quadras").delete().eq("id", id).catch(() => supabase.from("courts").delete().eq("id", id));
+    await supabase.from("quadras").delete().eq("id", id);
     load();
   }
 
@@ -128,7 +118,7 @@ function ArenaPanel() {
       status: "disparado"
     });
     if (error) {
-      toast.error(`Falha ao disparar: ${error.message}. Certifique-se de que a tabela arena_buttons existe no Supabase.`);
+      toast.error(`Falha ao disparar: ${error.message}`);
       return;
     }
     toast.success("Sinal de replay enviado ao agente local!");
