@@ -282,22 +282,18 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
 
 interface ZeroDelayBoard {
   id: string;
-  name: string;
-  serial: string;
-  model: string;
+  nome: string;
   created_at: string;
 }
 
 function BoardsCard({ arenaId }: { arenaId: string }) {
   const [list, setList] = useState<ZeroDelayBoard[]>([]);
   const [name, setName] = useState("");
-  const [serial, setSerial] = useState("");
-  const [model, setModel] = useState("ARC-968");
   const [busy, setBusy] = useState(false);
 
   async function load() {
     const { data } = await supabase
-      .from("zero_delay_boards")
+      .from("placas_zero_delay")
       .select("*")
       .eq("arena_id", arenaId)
       .order("created_at", { ascending: false });
@@ -320,26 +316,22 @@ function BoardsCard({ arenaId }: { arenaId: string }) {
   async function add(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return toast.error("Informe o nome da placa");
-    if (!serial.trim()) return toast.error("Informe o número de série");
     setBusy(true);
-    const { error } = await supabase.from("zero_delay_boards").insert({
+    const { error } = await supabase.from("placas_zero_delay").insert({
       arena_id: arenaId,
-      name: name.trim(),
-      serial: serial.trim(),
-      model
+      nome: name.trim(),
     });
     setBusy(false);
     if (error) return toast.error(error.message);
     setName("");
-    setSerial("");
     toast.success("Placa Zero-Delay cadastrada com sucesso! 12 botões foram gerados.");
     load();
     notify("courts.updated");
   }
 
   async function remove(board: ZeroDelayBoard) {
-    if (!confirm(`Remover placa "${board.name}" (${board.serial})? Isso removerá todos os botões e mapeamentos associados.`)) return;
-    const { error } = await supabase.from("zero_delay_boards").delete().eq("id", board.id);
+    if (!confirm(`Remover placa "${board.nome}"? Isso removerá todos os botões associados.`)) return;
+    const { error } = await supabase.from("placas_zero_delay").delete().eq("id", board.id);
     if (error) return toast.error(error.message);
     toast.success("Placa removida");
     load();
@@ -353,25 +345,10 @@ function BoardsCard({ arenaId }: { arenaId: string }) {
         Cadastre as placas de controle físico de botões instaladas na arena.
       </p>
 
-      <form onSubmit={add} className="mb-6 grid gap-4 md:grid-cols-[2fr_2fr_1fr_auto] items-end border border-border/60 rounded-lg p-4 bg-muted/20">
+      <form onSubmit={add} className="mb-6 grid gap-4 md:grid-cols-[1fr_auto] items-end border border-border/60 rounded-lg p-4 bg-muted/20">
         <div className="space-y-1">
           <Label htmlFor="board-name" className="text-xs font-semibold">Nome da Placa</Label>
           <Input id="board-name" placeholder="Ex: Placa Quadra 1" value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="board-serial" className="text-xs font-semibold">Número de Série (MAC ou ID)</Label>
-          <Input id="board-serial" placeholder="Ex: zd-01-ff-88" value={serial} onChange={(e) => setSerial(e.target.value)} />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="board-model" className="text-xs font-semibold">Modelo</Label>
-          <Select value={model} onValueChange={setModel}>
-            <SelectTrigger id="board-model">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ARC-968">ARC-968 (12 botões)</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
         <Button type="submit" disabled={busy} className="w-full">
           {busy ? "Salvando..." : "Cadastrar"}
@@ -385,9 +362,9 @@ function BoardsCard({ arenaId }: { arenaId: string }) {
           {list.map((b) => (
             <div key={b.id} className="flex items-center justify-between rounded-lg border border-border p-4 hover:border-primary/30 transition-all bg-card">
               <div>
-                <h3 className="font-semibold text-sm">{b.name}</h3>
+                <h3 className="font-semibold text-sm">{b.nome}</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Série: <code className="bg-muted px-1.5 py-0.5 rounded text-[10px] font-mono">{b.serial}</code> · Modelo: {b.model} (12 pinos)
+                  12 botões gerados automaticamente
                 </p>
               </div>
               <Button size="icon" variant="ghost" onClick={() => remove(b)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
