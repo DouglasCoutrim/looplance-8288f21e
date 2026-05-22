@@ -212,6 +212,42 @@ export type Database = {
         }
         Relationships: []
       }
+      courts: {
+        Row: {
+          arena_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          arena_id: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          arena_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courts_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "arenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courts_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "public_arenas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorite_arenas: {
         Row: {
           arena_id: string
@@ -296,23 +332,23 @@ export type Database = {
       replays: {
         Row: {
           arena_id: string
+          court_id: string | null
           created_at: string
           id: string
-          quadra_id: string | null
           video_url: string
         }
         Insert: {
           arena_id: string
+          court_id?: string | null
           created_at?: string
           id?: string
-          quadra_id?: string | null
           video_url: string
         }
         Update: {
           arena_id?: string
+          court_id?: string | null
           created_at?: string
           id?: string
-          quadra_id?: string | null
           video_url?: string
         }
         Relationships: [
@@ -328,6 +364,13 @@ export type Database = {
             columns: ["arena_id"]
             isOneToOne: false
             referencedRelation: "public_arenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "replays_court_id_fkey"
+            columns: ["court_id"]
+            isOneToOne: false
+            referencedRelation: "courts"
             referencedColumns: ["id"]
           },
         ]
