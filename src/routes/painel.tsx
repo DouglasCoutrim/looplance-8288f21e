@@ -118,23 +118,21 @@ function ArenaPanel() {
   async function uploadVideo(e: React.FormEvent) {
     e.preventDefault();
     const file = fileRef.current?.files?.[0];
-    if (!file || !arena || !videoTitle) return toast.error("Preencha título e selecione um vídeo");
+    if (!file || !arena) return toast.error("Selecione um vídeo");
     setUploading(true);
     const path = `${arena.id}/${Date.now()}-${file.name}`;
     const { error: upErr } = await supabase.storage.from("arena-videos").upload(path, file);
     if (upErr) { toast.error(upErr.message); setUploading(false); return; }
     const { data: pub } = supabase.storage.from("arena-videos").getPublicUrl(path);
-    const { error } = await supabase.from("videos").insert({
+    const { error } = await supabase.from("replays").insert({
       arena_id: arena.id,
-      court_id: videoCourtId || null,
-      title: videoTitle,
+      quadra_id: videoCourtId || null,
       video_url: pub.publicUrl,
-      uploaded_by: user!.id,
     });
     setUploading(false);
     if (error) return toast.error(error.message);
     toast.success("Vídeo publicado!");
-    setVideoTitle(""); setVideoCourtId("");
+    setVideoCourtId("");
     if (fileRef.current) fileRef.current.value = "";
     load();
   }
