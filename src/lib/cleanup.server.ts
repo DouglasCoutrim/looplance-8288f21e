@@ -11,7 +11,7 @@ export async function runCleanupRoutine() {
 
   const { data: arenas, error } = await supabaseAdmin
     .from("arenas")
-    .select("id,name,supabase_url,supabase_service_key,videos_bucket,retention_days")
+    .select("id,name,supabase_url,supabase_service_key,retention_days")
     .not("supabase_url", "is", null)
     .not("supabase_service_key", "is", null);
   if (error) throw new Error(error.message);
@@ -20,7 +20,7 @@ export async function runCleanupRoutine() {
 
   for (const a of (arenas ?? []) as any[]) {
     const days = a.retention_days ?? defaultDays;
-    const bucket = a.videos_bucket ?? "replays";
+    const bucket = "replays";
     const url = a.supabase_url as string;
     const key = a.supabase_service_key as string;
     const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
