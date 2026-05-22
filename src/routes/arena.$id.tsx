@@ -69,8 +69,8 @@ function ArenaDashboard() {
       let rows: any[] = [];
       
       try {
-        const { data, error } = await supabase.from("videos")
-          .select("id,video_url,created_at,court_id")
+        const { data, error } = await supabase.from("replays")
+          .select("id,video_url,created_at,quadra_id")
           .eq("arena_id", arena.id)
           .order("created_at", { ascending: false })
           .limit(500);
