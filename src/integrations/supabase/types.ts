@@ -35,23 +35,23 @@ export type Database = {
       arena_buttons: {
         Row: {
           arena_id: string
+          court_id: string
           created_at: string
           id: string
-          quadra_id: string
           status: string
         }
         Insert: {
           arena_id: string
+          court_id: string
           created_at?: string
           id?: string
-          quadra_id: string
           status?: string
         }
         Update: {
           arena_id?: string
+          court_id?: string
           created_at?: string
           id?: string
-          quadra_id?: string
           status?: string
         }
         Relationships: [
@@ -67,6 +67,13 @@ export type Database = {
             columns: ["arena_id"]
             isOneToOne: false
             referencedRelation: "public_arenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arena_buttons_court_id_fkey"
+            columns: ["court_id"]
+            isOneToOne: false
+            referencedRelation: "courts"
             referencedColumns: ["id"]
           },
         ]
