@@ -14,7 +14,85 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      arenas: {
+        Row: {
+          cidade: string
+          id: string
+          logo_url: string | null
+          nome: string
+        }
+        Insert: {
+          cidade: string
+          id?: string
+          logo_url?: string | null
+          nome: string
+        }
+        Update: {
+          cidade?: string
+          id?: string
+          logo_url?: string | null
+          nome?: string
+        }
+        Relationships: []
+      }
+      quadras: {
+        Row: {
+          arena_id: string | null
+          id: string
+          nome: string
+        }
+        Insert: {
+          arena_id?: string | null
+          id?: string
+          nome: string
+        }
+        Update: {
+          arena_id?: string | null
+          id?: string
+          nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quadras_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "arenas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      replays: {
+        Row: {
+          criado_em: string | null
+          duracao_segundos: number | null
+          id: string
+          quadra_id: string | null
+          video_url: string
+        }
+        Insert: {
+          criado_em?: string | null
+          duracao_segundos?: number | null
+          id?: string
+          quadra_id?: string | null
+          video_url: string
+        }
+        Update: {
+          criado_em?: string | null
+          duracao_segundos?: number | null
+          id?: string
+          quadra_id?: string | null
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "replays_quadra_id_fkey"
+            columns: ["quadra_id"]
+            isOneToOne: false
+            referencedRelation: "quadras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

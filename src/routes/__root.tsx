@@ -7,9 +7,6 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { Toaster } from "@/components/ui/sonner";
-import { RoleSimulatorProvider } from "@/contexts/role-simulator";
-import { RoleSimulatorBar } from "@/components/RoleSimulatorBar";
 
 import appCss from "../styles.css?url";
 
@@ -70,28 +67,20 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+const queryClient = new QueryClient();
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "LoopLance — Repita a emoção" },
-      { name: "description", content: "Plataforma multi-arena para reviver seus melhores momentos na quadra." },
+      { name: "description", content: "Plataforma de replays esportivos." },
       { name: "theme-color", content: "#FF6600" },
-      { property: "og:title", content: "LoopLance — Repita a emoção" },
-      { property: "og:description", content: "Plataforma multi-arena para reviver seus melhores momentos na quadra." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:title", content: "LoopLance — Repita a emoção" },
-      { name: "twitter:description", content: "Plataforma multi-arena para reviver seus melhores momentos na quadra." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a0144c6d-0653-4626-9966-f7778b575848/id-preview-e6e7df94--8299bd7c-d78f-407f-9c10-87e7f45cb569.lovable.app-1778431061154.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a0144c6d-0653-4626-9966-f7778b575848/id-preview-e6e7df94--8299bd7c-d78f-407f-9c10-87e7f45cb569.lovable.app-1778431061154.png" },
-      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "icon", href: "/icon-192.png", type: "image/png" },
-      { rel: "apple-touch-icon", href: "/icon-192.png" },
     ],
   }),
   shellComponent: RootShell,
@@ -115,15 +104,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
-
   return (
     <QueryClientProvider client={queryClient}>
-      <RoleSimulatorProvider>
-        <RoleSimulatorBar />
-        <Outlet />
-        <Toaster richColors theme="dark" position="top-center" />
-      </RoleSimulatorProvider>
+      <Outlet />
     </QueryClientProvider>
   );
 }

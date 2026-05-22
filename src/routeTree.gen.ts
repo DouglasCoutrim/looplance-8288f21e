@@ -9,291 +9,38 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as ReplaysRouteImport } from './routes/replays'
-import { Route as PerfilRouteImport } from './routes/perfil'
-import { Route as PainelRouteImport } from './routes/painel'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AoVivoRouteImport } from './routes/ao-vivo'
-import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AcessoNegadoRouteImport } from './routes/acesso-negado'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ArenaIdRouteImport } from './routes/arena.$id'
-import { Route as AdminInfraRouteImport } from './routes/admin.infra'
-import { Route as AdminIngestArenaIdRouteImport } from './routes/admin.ingest.$arenaId'
-import { Route as AdminArenaIdRouteImport } from './routes/admin.arena.$id'
-import { Route as ApiPublicIngestReplayRouteImport } from './routes/api/public/ingest.replay'
-import { Route as ApiPublicHooksCleanupVideosRouteImport } from './routes/api/public/hooks/cleanup-videos'
-import { Route as ApiPublicAgentConfigRouteImport } from './routes/api/public/agent.config'
 
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReplaysRoute = ReplaysRouteImport.update({
-  id: '/replays',
-  path: '/replays',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PerfilRoute = PerfilRouteImport.update({
-  id: '/perfil',
-  path: '/perfil',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PainelRoute = PainelRouteImport.update({
-  id: '/painel',
-  path: '/painel',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AoVivoRoute = AoVivoRouteImport.update({
-  id: '/ao-vivo',
-  path: '/ao-vivo',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AcessoNegadoRoute = AcessoNegadoRouteImport.update({
-  id: '/acesso-negado',
-  path: '/acesso-negado',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ArenaIdRoute = ArenaIdRouteImport.update({
-  id: '/arena/$id',
-  path: '/arena/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminInfraRoute = AdminInfraRouteImport.update({
-  id: '/infra',
-  path: '/infra',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminIngestArenaIdRoute = AdminIngestArenaIdRouteImport.update({
-  id: '/ingest/$arenaId',
-  path: '/ingest/$arenaId',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminArenaIdRoute = AdminArenaIdRouteImport.update({
-  id: '/arena/$id',
-  path: '/arena/$id',
-  getParentRoute: () => AdminRoute,
-} as any)
-const ApiPublicIngestReplayRoute = ApiPublicIngestReplayRouteImport.update({
-  id: '/api/public/ingest/replay',
-  path: '/api/public/ingest/replay',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicHooksCleanupVideosRoute =
-  ApiPublicHooksCleanupVideosRouteImport.update({
-    id: '/api/public/hooks/cleanup-videos',
-    path: '/api/public/hooks/cleanup-videos',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicAgentConfigRoute = ApiPublicAgentConfigRouteImport.update({
-  id: '/api/public/agent/config',
-  path: '/api/public/agent/config',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/acesso-negado': typeof AcessoNegadoRoute
-  '/admin': typeof AdminRouteWithChildren
-  '/ao-vivo': typeof AoVivoRoute
-  '/login': typeof LoginRoute
-  '/painel': typeof PainelRoute
-  '/perfil': typeof PerfilRoute
-  '/replays': typeof ReplaysRoute
-  '/signup': typeof SignupRoute
-  '/admin/infra': typeof AdminInfraRoute
-  '/arena/$id': typeof ArenaIdRoute
-  '/admin/arena/$id': typeof AdminArenaIdRoute
-  '/admin/ingest/$arenaId': typeof AdminIngestArenaIdRoute
-  '/api/public/agent/config': typeof ApiPublicAgentConfigRoute
-  '/api/public/hooks/cleanup-videos': typeof ApiPublicHooksCleanupVideosRoute
-  '/api/public/ingest/replay': typeof ApiPublicIngestReplayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/acesso-negado': typeof AcessoNegadoRoute
-  '/admin': typeof AdminRouteWithChildren
-  '/ao-vivo': typeof AoVivoRoute
-  '/login': typeof LoginRoute
-  '/painel': typeof PainelRoute
-  '/perfil': typeof PerfilRoute
-  '/replays': typeof ReplaysRoute
-  '/signup': typeof SignupRoute
-  '/admin/infra': typeof AdminInfraRoute
-  '/arena/$id': typeof ArenaIdRoute
-  '/admin/arena/$id': typeof AdminArenaIdRoute
-  '/admin/ingest/$arenaId': typeof AdminIngestArenaIdRoute
-  '/api/public/agent/config': typeof ApiPublicAgentConfigRoute
-  '/api/public/hooks/cleanup-videos': typeof ApiPublicHooksCleanupVideosRoute
-  '/api/public/ingest/replay': typeof ApiPublicIngestReplayRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/acesso-negado': typeof AcessoNegadoRoute
-  '/admin': typeof AdminRouteWithChildren
-  '/ao-vivo': typeof AoVivoRoute
-  '/login': typeof LoginRoute
-  '/painel': typeof PainelRoute
-  '/perfil': typeof PerfilRoute
-  '/replays': typeof ReplaysRoute
-  '/signup': typeof SignupRoute
-  '/admin/infra': typeof AdminInfraRoute
-  '/arena/$id': typeof ArenaIdRoute
-  '/admin/arena/$id': typeof AdminArenaIdRoute
-  '/admin/ingest/$arenaId': typeof AdminIngestArenaIdRoute
-  '/api/public/agent/config': typeof ApiPublicAgentConfigRoute
-  '/api/public/hooks/cleanup-videos': typeof ApiPublicHooksCleanupVideosRoute
-  '/api/public/ingest/replay': typeof ApiPublicIngestReplayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/acesso-negado'
-    | '/admin'
-    | '/ao-vivo'
-    | '/login'
-    | '/painel'
-    | '/perfil'
-    | '/replays'
-    | '/signup'
-    | '/admin/infra'
-    | '/arena/$id'
-    | '/admin/arena/$id'
-    | '/admin/ingest/$arenaId'
-    | '/api/public/agent/config'
-    | '/api/public/hooks/cleanup-videos'
-    | '/api/public/ingest/replay'
+  fullPaths: '/'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/acesso-negado'
-    | '/admin'
-    | '/ao-vivo'
-    | '/login'
-    | '/painel'
-    | '/perfil'
-    | '/replays'
-    | '/signup'
-    | '/admin/infra'
-    | '/arena/$id'
-    | '/admin/arena/$id'
-    | '/admin/ingest/$arenaId'
-    | '/api/public/agent/config'
-    | '/api/public/hooks/cleanup-videos'
-    | '/api/public/ingest/replay'
-  id:
-    | '__root__'
-    | '/'
-    | '/acesso-negado'
-    | '/admin'
-    | '/ao-vivo'
-    | '/login'
-    | '/painel'
-    | '/perfil'
-    | '/replays'
-    | '/signup'
-    | '/admin/infra'
-    | '/arena/$id'
-    | '/admin/arena/$id'
-    | '/admin/ingest/$arenaId'
-    | '/api/public/agent/config'
-    | '/api/public/hooks/cleanup-videos'
-    | '/api/public/ingest/replay'
+  to: '/'
+  id: '__root__' | '/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AcessoNegadoRoute: typeof AcessoNegadoRoute
-  AdminRoute: typeof AdminRouteWithChildren
-  AoVivoRoute: typeof AoVivoRoute
-  LoginRoute: typeof LoginRoute
-  PainelRoute: typeof PainelRoute
-  PerfilRoute: typeof PerfilRoute
-  ReplaysRoute: typeof ReplaysRoute
-  SignupRoute: typeof SignupRoute
-  ArenaIdRoute: typeof ArenaIdRoute
-  ApiPublicAgentConfigRoute: typeof ApiPublicAgentConfigRoute
-  ApiPublicHooksCleanupVideosRoute: typeof ApiPublicHooksCleanupVideosRoute
-  ApiPublicIngestReplayRoute: typeof ApiPublicIngestReplayRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/replays': {
-      id: '/replays'
-      path: '/replays'
-      fullPath: '/replays'
-      preLoaderRoute: typeof ReplaysRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/perfil': {
-      id: '/perfil'
-      path: '/perfil'
-      fullPath: '/perfil'
-      preLoaderRoute: typeof PerfilRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/painel': {
-      id: '/painel'
-      path: '/painel'
-      fullPath: '/painel'
-      preLoaderRoute: typeof PainelRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ao-vivo': {
-      id: '/ao-vivo'
-      path: '/ao-vivo'
-      fullPath: '/ao-vivo'
-      preLoaderRoute: typeof AoVivoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/acesso-negado': {
-      id: '/acesso-negado'
-      path: '/acesso-negado'
-      fullPath: '/acesso-negado'
-      preLoaderRoute: typeof AcessoNegadoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -301,86 +48,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/arena/$id': {
-      id: '/arena/$id'
-      path: '/arena/$id'
-      fullPath: '/arena/$id'
-      preLoaderRoute: typeof ArenaIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/infra': {
-      id: '/admin/infra'
-      path: '/infra'
-      fullPath: '/admin/infra'
-      preLoaderRoute: typeof AdminInfraRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/ingest/$arenaId': {
-      id: '/admin/ingest/$arenaId'
-      path: '/ingest/$arenaId'
-      fullPath: '/admin/ingest/$arenaId'
-      preLoaderRoute: typeof AdminIngestArenaIdRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/arena/$id': {
-      id: '/admin/arena/$id'
-      path: '/arena/$id'
-      fullPath: '/admin/arena/$id'
-      preLoaderRoute: typeof AdminArenaIdRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/api/public/ingest/replay': {
-      id: '/api/public/ingest/replay'
-      path: '/api/public/ingest/replay'
-      fullPath: '/api/public/ingest/replay'
-      preLoaderRoute: typeof ApiPublicIngestReplayRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/cleanup-videos': {
-      id: '/api/public/hooks/cleanup-videos'
-      path: '/api/public/hooks/cleanup-videos'
-      fullPath: '/api/public/hooks/cleanup-videos'
-      preLoaderRoute: typeof ApiPublicHooksCleanupVideosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/agent/config': {
-      id: '/api/public/agent/config'
-      path: '/api/public/agent/config'
-      fullPath: '/api/public/agent/config'
-      preLoaderRoute: typeof ApiPublicAgentConfigRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
-interface AdminRouteChildren {
-  AdminInfraRoute: typeof AdminInfraRoute
-  AdminArenaIdRoute: typeof AdminArenaIdRoute
-  AdminIngestArenaIdRoute: typeof AdminIngestArenaIdRoute
-}
-
-const AdminRouteChildren: AdminRouteChildren = {
-  AdminInfraRoute: AdminInfraRoute,
-  AdminArenaIdRoute: AdminArenaIdRoute,
-  AdminIngestArenaIdRoute: AdminIngestArenaIdRoute,
-}
-
-const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AcessoNegadoRoute: AcessoNegadoRoute,
-  AdminRoute: AdminRouteWithChildren,
-  AoVivoRoute: AoVivoRoute,
-  LoginRoute: LoginRoute,
-  PainelRoute: PainelRoute,
-  PerfilRoute: PerfilRoute,
-  ReplaysRoute: ReplaysRoute,
-  SignupRoute: SignupRoute,
-  ArenaIdRoute: ArenaIdRoute,
-  ApiPublicAgentConfigRoute: ApiPublicAgentConfigRoute,
-  ApiPublicHooksCleanupVideosRoute: ApiPublicHooksCleanupVideosRoute,
-  ApiPublicIngestReplayRoute: ApiPublicIngestReplayRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
