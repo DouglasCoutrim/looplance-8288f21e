@@ -1,0 +1,13 @@
+DROP TABLE IF EXISTS public.courts CASCADE;
+DROP TABLE IF EXISTS public.arena_sponsors CASCADE;
+DROP TABLE IF EXISTS public.cameras CASCADE;
+DROP TABLE IF EXISTS public.placas_zero_delay CASCADE;
+DROP TABLE IF EXISTS public.botoes_zero_delay CASCADE;
+DROP TABLE IF EXISTS public.arena_ingest_tokens CASCADE;
+DROP TABLE IF EXISTS public.favorite_arenas CASCADE;
+DROP TABLE IF EXISTS public.replays CASCADE;
+DROP TABLE IF EXISTS public.user_roles CASCADE;
+DROP TABLE IF EXISTS public.arenas CASCADE;
+DROP TABLE IF EXISTS public.app_settings CASCADE;
+DROP TABLE IF EXISTS public.quadras CASCADE;
+DROP TABLE IF EXISTS public.profiles CASCADE;
