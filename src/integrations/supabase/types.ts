@@ -33,50 +33,10 @@ export type Database = {
         Relationships: []
       }
       arena_buttons: {
-        Row: {
-          arena_id: string
-          created_at: string
-          id: string
-          quadra_id: string
-          status: string
-        }
-        Insert: {
-          arena_id: string
-          created_at?: string
-          id?: string
-          quadra_id: string
-          status?: string
-        }
-        Update: {
-          arena_id?: string
-          created_at?: string
-          id?: string
-          quadra_id?: string
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "arena_buttons_arena_id_fkey"
-            columns: ["arena_id"]
-            isOneToOne: false
-            referencedRelation: "arenas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "arena_buttons_arena_id_fkey"
-            columns: ["arena_id"]
-            isOneToOne: false
-            referencedRelation: "public_arenas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "arena_buttons_quadra_id_fkey"
-            columns: ["quadra_id"]
-            isOneToOne: false
-            referencedRelation: "courts"
-            referencedColumns: ["id"]
-          },
-        ]
+        Row: { id: string; arena_id: string; quadra_id: string | null; status: string; created_at: string }
+        Insert: { id?: string; arena_id: string; quadra_id?: string | null; status: string; created_at?: string }
+        Update: { id?: string; arena_id?: string; quadra_id?: string | null; status?: string; created_at?: string }
+        Relationships: []
       }
       arena_ingest_tokens: {
         Row: {
@@ -219,6 +179,79 @@ export type Database = {
         }
         Relationships: []
       }
+      cameras: {
+        Row: {
+          arena_id: string
+          button_id: string | null
+          created_at: string
+          id: string
+          name: string
+          rtsp_url: string
+        }
+        Insert: {
+          arena_id: string
+          button_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          rtsp_url: string
+        }
+        Update: {
+          arena_id?: string
+          button_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          rtsp_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cameras_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "arenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cameras_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "public_arenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cameras_button_id_fkey"
+            columns: ["button_id"]
+            isOneToOne: false
+            referencedRelation: "arena_buttons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      court_cameras: {
+        Row: {
+          arena_id: string
+          camera_id: string
+          court_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          arena_id: string
+          camera_id: string
+          court_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          arena_id?: string
+          camera_id?: string
+          court_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       courts: {
         Row: {
           arena_id: string
@@ -226,7 +259,6 @@ export type Database = {
           id: string
           name: string
           qr_token: string
-          rtsp_url: string | null
         }
         Insert: {
           arena_id: string
@@ -234,7 +266,6 @@ export type Database = {
           id?: string
           name: string
           qr_token?: string
-          rtsp_url?: string | null
         }
         Update: {
           arena_id?: string
@@ -242,7 +273,6 @@ export type Database = {
           id?: string
           name?: string
           qr_token?: string
-          rtsp_url?: string | null
         }
         Relationships: [
           {
@@ -282,6 +312,60 @@ export type Database = {
         }
         Relationships: []
       }
+      global_replays: {
+        Row: {
+          arena_id: string
+          arena_logo_url: string | null
+          arena_name: string
+          arena_primary_color: string
+          arena_slug: string
+          court_id: string | null
+          court_name: string | null
+          created_at: string
+          data_evento: string
+          hora_evento: string
+          id: string
+          thumbnail_url: string | null
+          title: string | null
+          video_id: string | null
+          video_url: string
+        }
+        Insert: {
+          arena_id: string
+          arena_logo_url?: string | null
+          arena_name: string
+          arena_primary_color?: string
+          arena_slug: string
+          court_id?: string | null
+          court_name?: string | null
+          created_at?: string
+          data_evento?: string
+          hora_evento?: string
+          id?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          video_id?: string | null
+          video_url: string
+        }
+        Update: {
+          arena_id?: string
+          arena_logo_url?: string | null
+          arena_name?: string
+          arena_primary_color?: string
+          arena_slug?: string
+          court_id?: string | null
+          court_name?: string | null
+          created_at?: string
+          data_evento?: string
+          hora_evento?: string
+          id?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          video_id?: string | null
+          video_url?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -303,51 +387,17 @@ export type Database = {
         }
         Relationships: []
       }
+      quadras: {
+        Row: { id: string; arena_id: string; nome: string; rtsp_url: string | null; created_at: string }
+        Insert: { id?: string; arena_id: string; nome: string; rtsp_url?: string | null; created_at?: string }
+        Update: { id?: string; arena_id?: string; nome?: string; rtsp_url?: string | null; created_at?: string }
+        Relationships: []
+      }
       replays: {
-        Row: {
-          arena_id: string
-          created_at: string
-          id: string
-          quadra_id: string | null
-          video_url: string
-        }
-        Insert: {
-          arena_id: string
-          created_at?: string
-          id?: string
-          quadra_id?: string | null
-          video_url: string
-        }
-        Update: {
-          arena_id?: string
-          created_at?: string
-          id?: string
-          quadra_id?: string | null
-          video_url?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "replays_arena_id_fkey"
-            columns: ["arena_id"]
-            isOneToOne: false
-            referencedRelation: "arenas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "replays_arena_id_fkey"
-            columns: ["arena_id"]
-            isOneToOne: false
-            referencedRelation: "public_arenas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "replays_quadra_id_fkey"
-            columns: ["quadra_id"]
-            isOneToOne: false
-            referencedRelation: "courts"
-            referencedColumns: ["id"]
-          },
-        ]
+        Row: { id: string; arena_id: string; quadra_id: string | null; video_url: string; created_at: string }
+        Insert: { id?: string; arena_id: string; quadra_id?: string | null; video_url: string; created_at?: string }
+        Update: { id?: string; arena_id?: string; quadra_id?: string | null; video_url?: string; created_at?: string }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -443,45 +493,80 @@ export type Database = {
           },
         ]
       }
-    }
-    Views: {
-      global_replays: {
+      zero_delay_boards: {
         Row: {
-          arena_id: string | null
-          arena_logo_url: string | null
-          arena_name: string | null
-          arena_primary_color: string | null
-          arena_slug: string | null
-          court_id: string | null
-          court_name: string | null
-          created_at: string | null
-          data_evento: string | null
-          hora_evento: string | null
-          id: string | null
-          thumbnail_url: string | null
-          title: string | null
-          video_url: string | null
+          arena_id: string
+          created_at: string
+          id: string
+          model: string
+          name: string
+          serial: string
+        }
+        Insert: {
+          arena_id: string
+          created_at?: string
+          id?: string
+          model?: string
+          name: string
+          serial: string
+        }
+        Update: {
+          arena_id?: string
+          created_at?: string
+          id?: string
+          model?: string
+          name?: string
+          serial?: string
         }
         Relationships: [
           {
-            foreignKeyName: "replays_arena_id_fkey"
+            foreignKeyName: "zero_delay_boards_arena_id_fkey"
             columns: ["arena_id"]
             isOneToOne: false
             referencedRelation: "arenas"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "replays_arena_id_fkey"
+            foreignKeyName: "zero_delay_boards_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "public_arenas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      arena_button_camera_map: {
+        Row: {
+          arena_id: string | null
+          button_label: string | null
+          button_number: number | null
+          camera_id: string | null
+          camera_name: string | null
+          pino: string | null
+          rtsp: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_buttons_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "arenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arena_buttons_arena_id_fkey"
             columns: ["arena_id"]
             isOneToOne: false
             referencedRelation: "public_arenas"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "replays_quadra_id_fkey"
-            columns: ["court_id"]
+            foreignKeyName: "arena_buttons_camera_id_fkey"
+            columns: ["camera_id"]
             isOneToOne: false
-            referencedRelation: "courts"
+            referencedRelation: "cameras"
             referencedColumns: ["id"]
           },
         ]

@@ -16,7 +16,7 @@ import { VideoActions } from "@/components/VideoActions";
 export const Route = createFileRoute("/painel")({ component: ArenaPanel });
 
 interface Arena { id: string; name: string; slug: string; logo_url: string | null; primary_color: string; city: string | null; state: string | null; }
-interface Court { id: string; name: string; qr_token: string; rtsp_url: string | null; }
+interface Court { id: string; name: string; qr_token: string; cameras?: { id: string; name: string; rtsp_url: string }[]; }
 interface Video { id: string; title: string; video_url: string; court_id: string | null; created_at: string; }
 
 function ArenaPanel() {
@@ -33,18 +33,32 @@ function ArenaPanel() {
 
   async function load() {
     if (!adminArenaId) return;
-    const [{ data: a }, { data: q }, { data: v }] = await Promise.all([
+    const [{ data: a }, { data: q }, { data: v }, { data: mapData }] = await Promise.all([
       supabase.from("arenas").select("*").eq("id", adminArenaId).maybeSingle(),
-      supabase.from("courts").select("id, arena_id, name, rtsp_url").eq("arena_id", adminArenaId).order("name").then((res: any) => res, () => ({ data: [] })),
+      supabase.from("quadras").select("id, arena_id, nome").eq("arena_id", adminArenaId).order("nome").then((res: any) => res, () => ({ data: [] })),
       supabase.from("replays").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }).then((res: any) => res, () => ({ data: [] })),
+      supabase.from("court_cameras" as any).select("court_id, cameras(id, name, rtsp_url)").eq("arena_id", adminArenaId).then((res: any) => res, () => ({ data: [] })),
     ]);
     if (a) { setArena(a as Arena); setArenaName(a.name); setArenaCity((a as Arena).city ?? ""); setArenaState((a as Arena).state ?? ""); }
     
+    const courtCamsMap = new Map<string, { id: string; name: string; rtsp_url: string }[]>();
+    (mapData ?? []).forEach((row: any) => {
+      if (row.cameras) {
+        const cams = courtCamsMap.get(row.court_id) ?? [];
+        cams.push({
+          id: row.cameras.id,
+          name: row.cameras.name,
+          rtsp_url: row.cameras.rtsp_url
+        });
+        courtCamsMap.set(row.court_id, cams);
+      }
+    });
+    
     const mappedCourts = (q ?? []).map((row: any) => ({
       id: row.id,
-      name: row.name,
+      name: row.nome,
       qr_token: row.id,
-      rtsp_url: row.rtsp_url
+      cameras: courtCamsMap.get(row.id) ?? []
     }));
     setCourts(mappedCourts as Court[]);
     
@@ -90,7 +104,7 @@ function ArenaPanel() {
   async function addCourt(e: React.FormEvent) {
     e.preventDefault();
     if (!arena) return;
-    const { error } = await supabase.from("courts").insert({ arena_id: arena.id, name: newCourt });
+    const { error } = await supabase.from("quadras").insert({ arena_id: arena.id, nome: newCourt });
     if (error) {
        toast.error(error.message);
     }
@@ -99,16 +113,11 @@ function ArenaPanel() {
 
   async function removeCourt(id: string) {
     if (!confirm("Excluir esta quadra?")) return;
-    await supabase.from("courts").delete().eq("id", id);
+    await supabase.from("quadras").delete().eq("id", id);
     load();
   }
 
-  async function updateCourtRtsp(id: string, newRtsp: string) {
-    const { error } = await supabase.from("courts").update({ rtsp_url: newRtsp }).eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("URL RTSP atualizada");
-    load();
-  }
+
 
   async function triggerReplay(courtId: string) {
     if (!arena) return;
@@ -223,18 +232,19 @@ function ArenaPanel() {
 
                   <div className="mt-4 border-t border-border pt-3 space-y-3">
                     <div>
-                      <Label className="text-xs">URL da Câmera (RTSP)</Label>
-                      <div className="flex gap-2 mt-1">
-                        <Input 
-                          className="h-8 text-xs" 
-                          defaultValue={c.rtsp_url || ""} 
-                          placeholder="rtsp://..."
-                          onBlur={(e) => {
-                            if (e.target.value !== c.rtsp_url) updateCourtRtsp(c.id, e.target.value);
-                          }}
-                        />
+                      <Label className="text-xs font-semibold">Câmeras Vinculadas</Label>
+                      <div className="flex flex-col gap-1.5 mt-1.5">
+                        {c.cameras && c.cameras.length > 0 ? (
+                          c.cameras.map((cam) => (
+                            <span key={cam.id} className="text-xs bg-muted border border-border px-2 py-1.5 rounded-md flex flex-col gap-0.5">
+                              <span className="font-semibold text-card-foreground">{cam.name}</span>
+                              <span className="text-[10px] text-muted-foreground font-mono truncate">{cam.rtsp_url}</span>
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">Nenhuma câmera vinculada. Peça ao administrador para configurar na aba "Câmeras".</span>
+                        )}
                       </div>
-                      <p className="text-[10px] text-muted-foreground mt-1">Ao sair do campo salva automaticamente.</p>
                     </div>
 
                     <Button variant="default" size="sm" className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700" onClick={() => triggerReplay(c.id)}>
