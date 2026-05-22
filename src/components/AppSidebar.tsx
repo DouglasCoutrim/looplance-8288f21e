@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Building2, Cable, LayoutDashboard, LogOut, PlayCircle } from "lucide-react";
+import { LayoutDashboard, LogOut, PlayCircle } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -18,39 +18,17 @@ import logoMark from "@/assets/logo-mark.png";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-
-interface NavItem {
-  title: string;
-  url: string;
-  icon: React.ComponentType<{ className?: string }>;
-}
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const navigate = useNavigate();
-  const { isSuperAdmin, adminArenaId, playerArenaIds, user } = useAuth();
+  const { user } = useAuth();
   const path = useRouterState({ select: (r) => r.location.pathname });
-  const [playerSlug, setPlayerSlug] = useState<string | null>(null);
 
-  useEffect(() => {
-    const id = playerArenaIds[0];
-    if (!id) return;
-    supabase.from("arenas").select("slug").eq("id", id).maybeSingle()
-      .then(({ data }) => setPlayerSlug(data?.slug ?? null));
-  }, [playerArenaIds.join(",")]);
-
-  const items: NavItem[] = [];
-  if (isSuperAdmin) {
-    items.push({ title: "Arenas", url: "/admin", icon: Building2 });
-    items.push({ title: "Infra Global", url: "/admin/infra", icon: Cable });
-  }
-  if (adminArenaId) {
-    items.push({ title: "Painel da Arena", url: "/painel", icon: LayoutDashboard });
-  }
-  items.push({ title: "Início", url: "/", icon: PlayCircle });
-  void playerSlug;
+  const items = [
+    { title: "Início", url: "/", icon: PlayCircle },
+  ];
 
   return (
     <Sidebar collapsible="icon">
