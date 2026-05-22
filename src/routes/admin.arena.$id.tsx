@@ -159,7 +159,7 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
     e.preventDefault();
     if (!name.trim()) return toast.error("Informe o nome");
     setBusy(true);
-    const { error } = await supabase.from("quadras").insert({ arena_id: arenaId, nome: name.trim() });
+    const { error } = await supabase.from("courts").insert({ arena_id: arenaId, name: name.trim() });
     setBusy(false);
     if (error) return toast.error(error.message);
     setName(""); toast.success("Quadra criada"); load(); notify("courts.updated");
@@ -167,7 +167,7 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
 
   async function remove(c: Court) {
     if (!confirm(`Remover quadra "${c.name}"? Isso também remove vídeos.`)) return;
-    const { error } = await supabase.from("quadras").delete().eq("id", c.id);
+    const { error } = await supabase.from("courts").delete().eq("id", c.id);
     if (error) return toast.error(error.message);
     load(); notify("courts.updated");
   }
@@ -175,7 +175,7 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
   async function rename(c: Court, newName: string) {
     const n = newName.trim();
     if (!n || n === c.name) return;
-    const { error } = await supabase.from("quadras").update({ nome: n }).eq("id", c.id);
+    const { error } = await supabase.from("courts").update({ name: n }).eq("id", c.id);
     if (error) return toast.error(error.message);
     load(); notify("courts.updated");
   }
