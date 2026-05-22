@@ -218,18 +218,21 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          rtsp_url: string | null
         }
         Insert: {
           arena_id: string
           created_at?: string
           id?: string
           name: string
+          rtsp_url?: string | null
         }
         Update: {
           arena_id?: string
           created_at?: string
           id?: string
           name?: string
+          rtsp_url?: string | null
         }
         Relationships: [
           {
