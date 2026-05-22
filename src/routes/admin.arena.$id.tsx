@@ -146,29 +146,27 @@ function ArenaDetailPage() {
 interface Court { id: string; name: string; qr_token: string }
 
 function CourtsCard({ arenaId }: { arenaId: string }) {
-  const [list, setList] = useState<(Court & { cameras?: { id: string; name: string; rtsp_url: string }[] })[]>([]);
+  const [list, setList] = useState<(Court & { cameras?: { id: string; nome: string; rtsp_url: string }[] })[]>([]);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function load() {
     const { data: q } = await supabase.from("quadras").select("id,nome").eq("arena_id", arenaId).order("nome");
     
-    const { data: mapData } = await supabase
-      .from("court_cameras")
-      .select("court_id, cameras(id, name, rtsp_url)")
+    const { data: cams } = await supabase
+      .from("cameras")
+      .select("id, nome, rtsp_url, quadra_id")
       .eq("arena_id", arenaId);
 
-    const courtCamsMap = new Map<string, { id: string; name: string; rtsp_url: string }[]>();
-    (mapData ?? []).forEach((row: any) => {
-      if (row.cameras) {
-        const cams = courtCamsMap.get(row.court_id) ?? [];
-        cams.push({
-          id: row.cameras.id,
-          name: row.cameras.name,
-          rtsp_url: row.cameras.rtsp_url
+    const courtCamsMap = new Map<string, { id: string; nome: string; rtsp_url: string }[]>();
+    (cams ?? []).forEach((row: any) => {
+        const list = courtCamsMap.get(row.quadra_id) ?? [];
+        list.push({
+          id: row.id,
+          nome: row.nome,
+          rtsp_url: row.rtsp_url
         });
-        courtCamsMap.set(row.court_id, cams);
-      }
+        courtCamsMap.set(row.quadra_id, list);
     });
 
     const mapped = (q ?? []).map((row: any) => ({
@@ -256,7 +254,7 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
                         c.cameras.map((cam) => (
                           <span key={cam.id} className="text-xs bg-muted border border-border px-2 py-1 rounded-md inline-flex items-center gap-1.5">
                             <Wifi className="h-3 w-3 text-emerald-500" />
-                            <strong>{cam.name}</strong>
+                            <strong>{cam.nome}</strong>
                             <span className="text-[10px] text-muted-foreground font-mono">({cam.rtsp_url})</span>
                           </span>
                         ))
@@ -402,50 +400,36 @@ function CamerasCard({ arenaId }: { arenaId: string }) {
   const [name, setName] = useState("");
   const [rtspUrl, setRtspUrl] = useState("");
   const [selectedButtonId, setSelectedButtonId] = useState<string>("none");
-  const [selectedCourtIds, setSelectedCourtIds] = useState<string[]>([]);
+  const [selectedCourtId, setSelectedCourtId] = useState<string>("none");
   const [busy, setBusy] = useState(false);
 
   async function load() {
-    const { data: cams } = await supabase.from("cameras").select("*").eq("arena_id", arenaId).order("name");
-    
-    const { data: mappings } = await supabase.from("court_cameras").select("camera_id, court_id").eq("arena_id", arenaId);
-    
+    const { data: cams } = await supabase.from("cameras").select("*").eq("arena_id", arenaId).order("nome");
     const { data: cts } = await supabase.from("quadras").select("id, nome").eq("arena_id", arenaId).order("nome");
-    const courtsList = (cts ?? []).map((row: any) => ({ id: row.id, name: row.nome }));
-    setCourts(courtsList);
+    setCourts((cts ?? []).map((row: any) => ({ id: row.id, name: row.nome })));
     
-    const { data: btns } = await supabase.from("arena_buttons").select("id, label, board_id").eq("arena_id", arenaId);
-    
-    const { data: boards } = await supabase.from("zero_delay_boards").select("id, name").eq("arena_id", arenaId);
-    const boardsMap = new Map((boards ?? []).map((b: any) => [b.id, b.name]));
+    const { data: boards } = await supabase.from("placas_zero_delay").select("id, nome").eq("arena_id", arenaId);
+    const boardsMap = new Map((boards ?? []).map((b: any) => [b.id, b.nome]));
+
+    const { data: btns } = await supabase.from("botoes_zero_delay").select("id, numero_botao, placa_id, status").in("placa_id", (boards ?? []).map(b => b.id));
     
     const mappedButtons = (btns ?? []).map((b: any) => ({
       id: b.id,
-      label: b.label,
-      board_name: b.board_id ? boardsMap.get(b.board_id) : undefined
+      label: `Botão ${b.numero_botao}${b.status === 'em uso' ? ' (Em Uso)' : ''}`,
+      board_name: boardsMap.get(b.placa_id),
+      status: b.status
     }));
     setButtons(mappedButtons);
 
     const buttonsMap = new Map(mappedButtons.map((b) => [b.id, b]));
-    const courtsMap = new Map(courtsList.map((c) => [c.id, c.name]));
-
-    const camCourtsMap = new Map<string, { ids: string[]; names: string[] }>();
-    (mappings ?? []).forEach((m: any) => {
-      const entry = camCourtsMap.get(m.camera_id) ?? { ids: [], names: [] };
-      entry.ids.push(m.court_id);
-      const name = courtsMap.get(m.court_id);
-      if (name) entry.names.push(name);
-      camCourtsMap.set(m.camera_id, entry);
-    });
+    const courtsMap = new Map((cts ?? []).map((c: any) => [c.id, c.nome]));
 
     const camerasList = (cams ?? []).map((c: any) => {
-      const btn = c.button_id ? buttonsMap.get(c.button_id) : null;
-      const ctsInfo = camCourtsMap.get(c.id) ?? { ids: [], names: [] };
+      const btn = c.botao_id ? buttonsMap.get(c.botao_id) : null;
       return {
         ...c,
         button_label: btn ? (btn.board_name ? `${btn.board_name} - ${btn.label}` : btn.label) : "Nenhum",
-        court_ids: ctsInfo.ids,
-        court_names: ctsInfo.names
+        court_name: courtsMap.get(c.quadra_id) ?? "Nenhuma"
       };
     });
 
@@ -469,37 +453,27 @@ function CamerasCard({ arenaId }: { arenaId: string }) {
     e.preventDefault();
     if (!name.trim()) return toast.error("Informe o nome da câmera");
     if (!rtspUrl.trim()) return toast.error("Informe a URL RTSP");
-    if (selectedCourtIds.length === 0) return toast.error("Selecione pelo menos uma quadra");
+    if (selectedCourtId === "none") return toast.error("Selecione uma quadra");
 
     setBusy(true);
     try {
-      const { data: cam, error: camErr } = await supabase
+      const { error: camErr } = await supabase
         .from("cameras")
         .insert({
           arena_id: arenaId,
-          name: name.trim(),
+          nome: name.trim(),
           rtsp_url: rtspUrl.trim(),
-          button_id: selectedButtonId === "none" ? null : selectedButtonId
-        })
-        .select()
-        .single();
+          botao_id: selectedButtonId === "none" ? null : selectedButtonId,
+          quadra_id: selectedCourtId
+        });
 
       if (camErr) throw camErr;
-
-      const mappings = selectedCourtIds.map((courtId) => ({
-        arena_id: arenaId,
-        camera_id: cam.id,
-        court_id: courtId
-      }));
-
-      const { error: mapErr } = await supabase.from("court_cameras").insert(mappings);
-      if (mapErr) throw mapErr;
 
       toast.success("Câmera cadastrada com sucesso!");
       setName("");
       setRtspUrl("");
       setSelectedButtonId("none");
-      setSelectedCourtIds([]);
+      setSelectedCourtId("none");
       load();
       notify("courts.updated");
     } catch (err: any) {
@@ -510,18 +484,12 @@ function CamerasCard({ arenaId }: { arenaId: string }) {
   }
 
   async function remove(c: Camera) {
-    if (!confirm(`Remover câmera "${c.name}"? Isso desvinculará botões e quadras.`)) return;
+    if (!confirm(`Remover câmera "${c.nome}"?`)) return;
     const { error } = await supabase.from("cameras").delete().eq("id", c.id);
     if (error) return toast.error(error.message);
     toast.success("Câmera removida");
     load();
     notify("courts.updated");
-  }
-
-  function handleCourtToggle(courtId: string) {
-    setSelectedCourtIds((prev) =>
-      prev.includes(courtId) ? prev.filter((id) => id !== courtId) : [...prev, courtId]
-    );
   }
 
   return (
@@ -541,11 +509,11 @@ function CamerasCard({ arenaId }: { arenaId: string }) {
             <Label htmlFor="cam-button" className="text-xs font-semibold">Botão Físico Mapeado</Label>
             <Select value={selectedButtonId} onValueChange={setSelectedButtonId}>
               <SelectTrigger id="cam-button">
-                <SelectValue />
+                <SelectValue placeholder="Selecione um botão" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Nenhum (Somente Gravação / Sem Botão)</SelectItem>
-                {buttons.map((b) => (
+                {buttons.filter(b => b.status === 'disponivel' || list.some(c => c.botao_id === b.id)).map((b) => (
                   <SelectItem key={b.id} value={b.id}>
                     {b.board_name ? `${b.board_name} - ${b.label}` : b.label}
                   </SelectItem>
@@ -563,28 +531,20 @@ function CamerasCard({ arenaId }: { arenaId: string }) {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-xs font-semibold">Vincular a Quadras</Label>
-          {courts.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Nenhuma quadra cadastrada para vincular.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {courts.map((court) => {
-                const selected = selectedCourtIds.includes(court.id);
-                return (
-                  <Button
-                    key={court.id}
-                    type="button"
-                    variant={selected ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleCourtToggle(court.id)}
-                    className="h-8 transition-all"
-                  >
-                    {court.name}
-                  </Button>
-                );
-              })}
-            </div>
-          )}
+          <Label className="text-xs font-semibold">Vincular a Quadra</Label>
+          <Select value={selectedCourtId} onValueChange={setSelectedCourtId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione uma quadra" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Selecione uma quadra</SelectItem>
+              {courts.map((court) => (
+                <SelectItem key={court.id} value={court.id}>
+                  {court.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex justify-end pt-2">
@@ -603,7 +563,7 @@ function CamerasCard({ arenaId }: { arenaId: string }) {
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-sm">{c.name}</h3>
+                    <h3 className="font-semibold text-sm">{c.nome}</h3>
                     <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
                       Botão: {c.button_label}
                     </span>
@@ -611,16 +571,12 @@ function CamerasCard({ arenaId }: { arenaId: string }) {
                   <p className="text-xs font-mono text-muted-foreground truncate max-w-xl bg-muted/40 p-1 rounded">
                     {c.rtsp_url}
                   </p>
-                  {c.court_names && c.court_names.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                      <span className="text-xs text-muted-foreground">Quadras:</span>
-                      {c.court_names.map((cName, idx) => (
-                        <span key={idx} className="text-[10px] border border-border bg-background px-2 py-0.5 rounded">
-                          {cName}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                    <span className="text-xs text-muted-foreground">Quadra:</span>
+                    <span className="text-[10px] border border-border bg-background px-2 py-0.5 rounded">
+                      {c.court_name}
+                    </span>
+                  </div>
                 </div>
                 <Button size="icon" variant="ghost" onClick={() => remove(c)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
                   <Trash2 className="h-4 w-4" />
