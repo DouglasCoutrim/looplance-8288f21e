@@ -35,14 +35,14 @@ function ArenaPanel() {
     if (!adminArenaId) return;
     const [{ data: a }, { data: q }, { data: v }] = await Promise.all([
       supabase.from("arenas").select("*").eq("id", adminArenaId).maybeSingle(),
-      supabase.from("quadras").select("id, arena_id, nome, rtsp_url").eq("arena_id", adminArenaId).order("nome").then((res: any) => res, () => ({ data: [] })),
+      supabase.from("courts").select("id, arena_id, name, rtsp_url").eq("arena_id", adminArenaId).order("name").then((res: any) => res, () => ({ data: [] })),
       supabase.from("replays").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }).then((res: any) => res, () => ({ data: [] })),
     ]);
     if (a) { setArena(a as Arena); setArenaName(a.name); setArenaCity((a as Arena).city ?? ""); setArenaState((a as Arena).state ?? ""); }
     
     const mappedCourts = (q ?? []).map((row: any) => ({
       id: row.id,
-      name: row.nome,
+      name: row.name,
       qr_token: row.id,
       rtsp_url: row.rtsp_url
     }));
@@ -90,7 +90,7 @@ function ArenaPanel() {
   async function addCourt(e: React.FormEvent) {
     e.preventDefault();
     if (!arena) return;
-    const { error } = await supabase.from("quadras").insert({ arena_id: arena.id, nome: newCourt });
+    const { error } = await supabase.from("courts").insert({ arena_id: arena.id, name: newCourt });
     if (error) {
        toast.error(error.message);
     }
@@ -99,12 +99,12 @@ function ArenaPanel() {
 
   async function removeCourt(id: string) {
     if (!confirm("Excluir esta quadra?")) return;
-    await supabase.from("quadras").delete().eq("id", id);
+    await supabase.from("courts").delete().eq("id", id);
     load();
   }
 
   async function updateCourtRtsp(id: string, newRtsp: string) {
-    const { error } = await supabase.from("quadras").update({ rtsp_url: newRtsp }).eq("id", id);
+    const { error } = await supabase.from("courts").update({ rtsp_url: newRtsp }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("URL RTSP atualizada");
     load();
