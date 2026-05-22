@@ -22,7 +22,6 @@ export const ArenaHeader = ({
   setSelectedQuadra 
 }: ArenaHeaderProps) => {
   const { points } = useGamification();
-  const { points } = useGamification();
 
 
   return (
