@@ -49,13 +49,20 @@ export function useGlobalReplays() {
 
     // Realtime listener
     const channel = supabase
-      .channel("global_replays_changes")
+      .channel("replays_changes")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "global_replays" },
-        (payload) => {
-          const newItem = payload.new as unknown as GlobalReplay;
-          setReplays((current) => [newItem, ...current].slice(0, GLOBAL_LIMIT));
+        { event: "INSERT", schema: "public", table: "replays" },
+        () => {
+          // Simplest way: refresh the list to get joined data from the view
+          (async () => {
+            const { data } = await supabase
+              .from("global_replays" as never)
+              .select("*")
+              .order("created_at", { ascending: false })
+              .limit(GLOBAL_LIMIT);
+            if (data) setReplays(data as unknown as GlobalReplay[]);
+          })();
         }
       )
       .subscribe();
