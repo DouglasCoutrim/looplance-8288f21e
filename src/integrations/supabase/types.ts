@@ -443,6 +443,52 @@ export type Database = {
         }
         Relationships: []
       }
+      replays: {
+        Row: {
+          arena_id: string
+          created_at: string
+          id: string
+          quadra_id: string | null
+          video_url: string
+        }
+        Insert: {
+          arena_id: string
+          created_at?: string
+          id?: string
+          quadra_id?: string | null
+          video_url: string
+        }
+        Update: {
+          arena_id?: string
+          created_at?: string
+          id?: string
+          quadra_id?: string | null
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "replays_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "arenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "replays_arena_id_fkey"
+            columns: ["arena_id"]
+            isOneToOne: false
+            referencedRelation: "public_arenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "replays_quadra_id_fkey"
+            columns: ["quadra_id"]
+            isOneToOne: false
+            referencedRelation: "courts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           arena_id: string | null
