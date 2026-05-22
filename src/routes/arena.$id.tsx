@@ -95,7 +95,7 @@ function ArenaDashboard() {
             second: "2-digit",
             hour12: false,
           }),
-          quadra_id: video.court_id,
+          quadra_id: video.quadra_id,
         };
       });
       setReplays(rs);
