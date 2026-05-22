@@ -26,6 +26,12 @@ interface Arena {
 }
 interface Sponsor { id: string; name: string; logo_url: string; link_url: string | null; display_order: number }
 interface UserRow { user_id: string; role: string; full_name: string | null }
+
+function ArenaDetailPage() {
+  const { id } = Route.useParams();
+  const { user, loading, isSuperAdmin } = useAuth();
+  const [arena, setArena] = useState<Arena | null>(null);
+  const [users, setUsers] = useState<UserRow[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
