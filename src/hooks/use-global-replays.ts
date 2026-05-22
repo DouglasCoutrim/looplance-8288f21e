@@ -31,8 +31,8 @@ export function useGlobalReplays() {
       setLoading(true);
       try {
         const { data, error } = await supabase
-          .from("global_replays" as never)
-          .select("*")
+          .from("replays")
+          .select("*, arenas(name, slug, primary_color, logo_url), courts(name)")
           .order("created_at", { ascending: false })
           .limit(GLOBAL_LIMIT);
 
