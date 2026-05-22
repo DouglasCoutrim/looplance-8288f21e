@@ -44,9 +44,9 @@ export const ArenaHeader = ({
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <Select value={selectedArena} onValueChange={setSelectedArena}>
+        <Select value={selectedArena} onValueChange={setSelectedArena} disabled={arenas.length === 0}>
           <SelectTrigger className="bg-card border-border/50 h-10 text-xs">
-            <SelectValue placeholder="Escolher Arena" />
+            <SelectValue placeholder={arenas.length === 0 ? "Carregando..." : "Escolher Arena"} />
           </SelectTrigger>
           <SelectContent>
             {arenas.map((arena) => (
@@ -57,9 +57,9 @@ export const ArenaHeader = ({
           </SelectContent>
         </Select>
 
-        <Select value={selectedQuadra} onValueChange={setSelectedQuadra} disabled={!selectedArena}>
+        <Select value={selectedQuadra} onValueChange={setSelectedQuadra} disabled={!selectedArena || quadras.length === 0}>
           <SelectTrigger className="bg-card border-border/50 h-10 text-xs">
-            <SelectValue placeholder="Escolher Quadra" />
+            <SelectValue placeholder={!selectedArena ? "Escolher Quadra" : quadras.length === 0 ? "Nenhuma Quadra" : "Escolher Quadra"} />
           </SelectTrigger>
           <SelectContent>
             {quadras.map((quadra) => (

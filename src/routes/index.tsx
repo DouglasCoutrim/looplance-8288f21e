@@ -112,8 +112,13 @@ function Index() {
       }
     }
 
-    const { data } = await query;
-    if (data) setReplays(data);
+    const { data, error } = await query;
+    if (error) {
+      console.error('Error fetching replays:', error);
+      setReplays([]);
+    } else {
+      setReplays(data || []);
+    }
     setIsLoading(false);
   };
 
