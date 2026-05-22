@@ -9,16 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Camera, Download, Loader2, Trash2, Upload } from "lucide-react";
+import { Download, Loader2, PlaySquare, Trash2, Upload } from "lucide-react";
 import { VideoActions } from "@/components/VideoActions";
 
 export const Route = createFileRoute("/painel")({ component: ArenaPanel });
 
 interface Arena { id: string; name: string; slug: string; logo_url: string | null; primary_color: string; city: string | null; state: string | null; }
 interface Court { id: string; name: string; qr_token: string; rtsp_url: string | null; }
-interface Video { id: string; video_url: string; quadra_id: string | null; created_at: string; }
+interface Video { id: string; title: string; video_url: string; court_id: string | null; created_at: string; }
 
 function ArenaPanel() {
   const { user, loading, adminArenaId } = useAuth();
@@ -30,22 +29,35 @@ function ArenaPanel() {
   const [arenaCity, setArenaCity] = useState("");
   const [arenaState, setArenaState] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [videoTitle, setVideoTitle] = useState("");
-  const [videoCourtId, setVideoCourtId] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null);
   const logoRef = useRef<HTMLInputElement>(null);
 
   async function load() {
     if (!adminArenaId) return;
-    const [{ data: a }, { data: c }, { data: v }] = await Promise.all([
+    const [{ data: a }, { data: q }, { data: v }] = await Promise.all([
       supabase.from("arenas").select("*").eq("id", adminArenaId).maybeSingle(),
-      supabase.from("courts").select("*").eq("arena_id", adminArenaId).order("name"),
-      supabase.from("replays").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }),
+      supabase.from("quadras").select("id, arena_id, nome, rtsp_url").eq("arena_id", adminArenaId).order("nome").then((res: any) => res, () => ({ data: [] })),
+      supabase.from("replays").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }).then((res: any) => res, () => ({ data: [] })),
     ]);
     if (a) { setArena(a as Arena); setArenaName(a.name); setArenaCity((a as Arena).city ?? ""); setArenaState((a as Arena).state ?? ""); }
-    setCourts((c ?? []) as Court[]);
-    setVideos((v ?? []) as Video[]);
+    
+    const mappedCourts = (q ?? []).map((row: any) => ({
+      id: row.id,
+      name: row.nome,
+      qr_token: row.id,
+      rtsp_url: row.rtsp_url
+    }));
+    setCourts(mappedCourts as Court[]);
+    
+    const mappedVideos = (v ?? []).map((row: any) => ({
+      id: row.id,
+      title: "Replay",
+      video_url: row.video_url,
+      court_id: row.quadra_id,
+      created_at: row.created_at
+    }));
+    setVideos(mappedVideos as Video[]);
   }
+  
   useEffect(() => { load(); }, [adminArenaId]);
 
   if (loading) return <FullLoader />;
@@ -78,48 +90,38 @@ function ArenaPanel() {
   async function addCourt(e: React.FormEvent) {
     e.preventDefault();
     if (!arena) return;
-    const { error } = await supabase.from("courts").insert({ arena_id: arena.id, name: newCourt });
-    if (error) return toast.error(error.message);
+    const { error } = await supabase.from("quadras").insert({ arena_id: arena.id, nome: newCourt });
+    if (error) {
+       toast.error(error.message);
+    }
     setNewCourt(""); load();
   }
 
   async function removeCourt(id: string) {
     if (!confirm("Excluir esta quadra?")) return;
-    await supabase.from("courts").delete().eq("id", id);
+    await supabase.from("quadras").delete().eq("id", id);
     load();
   }
 
-  async function testReplay(courtId: string) {
-    if (!adminArenaId) return;
+  async function updateCourtRtsp(id: string, newRtsp: string) {
+    const { error } = await supabase.from("quadras").update({ rtsp_url: newRtsp }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("URL RTSP atualizada");
+    load();
+  }
+
+  async function triggerReplay(courtId: string) {
+    if (!arena) return;
     const { error } = await supabase.from("arena_buttons").insert({
-      arena_id: adminArenaId,
-      quadra_id: courtId,
-      status: "disparado",
-    });
-    if (error) return toast.error(error.message);
-    toast.success("Sinal de gatilho enviado com sucesso!");
-  }
-
-  async function uploadVideo(e: React.FormEvent) {
-    e.preventDefault();
-    const file = fileRef.current?.files?.[0];
-    if (!file || !arena) return toast.error("Selecione um vídeo");
-    setUploading(true);
-    const path = `${arena.id}/${Date.now()}-${file.name}`;
-    const { error: upErr } = await supabase.storage.from("arena-videos").upload(path, file);
-    if (upErr) { toast.error(upErr.message); setUploading(false); return; }
-    const { data: pub } = supabase.storage.from("arena-videos").getPublicUrl(path);
-    const { error } = await supabase.from("replays").insert({
       arena_id: arena.id,
-      quadra_id: videoCourtId || null,
-      video_url: pub.publicUrl,
+      quadra_id: courtId,
+      status: "disparado"
     });
-    setUploading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Vídeo publicado!");
-    setVideoCourtId("");
-    if (fileRef.current) fileRef.current.value = "";
-    load();
+    if (error) {
+      toast.error(`Falha ao disparar: ${error.message}`);
+      return;
+    }
+    toast.success("Sinal de replay enviado ao agente local!");
   }
 
   async function deleteVideo(id: string) {
@@ -146,7 +148,7 @@ function ArenaPanel() {
         <TabsList>
           <TabsTrigger value="config">Arena</TabsTrigger>
           <TabsTrigger value="courts">Quadras & QR</TabsTrigger>
-          <TabsTrigger value="videos">Vídeos</TabsTrigger>
+          <TabsTrigger value="videos">Vídeos Replays</TabsTrigger>
         </TabsList>
 
         <TabsContent value="config" className="mt-4 space-y-4">
@@ -194,7 +196,7 @@ function ArenaPanel() {
           <Card className="p-6">
             <h2 className="mb-2 text-lg font-semibold">Minhas Quadras</h2>
             <p className="mb-4 text-sm text-muted-foreground">
-              Cadastre as quadras da sua arena e acompanhe seus replays.
+              Cadastre as quadras da sua arena e defina o link RTSP das câmeras.
             </p>
             <form onSubmit={addCourt} className="flex gap-2">
               <Input value={newCourt} onChange={(e) => setNewCourt(e.target.value)} placeholder="Nome da quadra" required />
@@ -219,9 +221,24 @@ function ArenaPanel() {
                     <Download className="mr-2 h-4 w-4" /> Baixar QR
                   </Button>
 
-                  <div className="mt-4 border-t border-border pt-3">
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => testReplay(c.id)}>
-                      Testar Replay
+                  <div className="mt-4 border-t border-border pt-3 space-y-3">
+                    <div>
+                      <Label className="text-xs">URL da Câmera (RTSP)</Label>
+                      <div className="flex gap-2 mt-1">
+                        <Input 
+                          className="h-8 text-xs" 
+                          defaultValue={c.rtsp_url || ""} 
+                          placeholder="rtsp://..."
+                          onBlur={(e) => {
+                            if (e.target.value !== c.rtsp_url) updateCourtRtsp(c.id, e.target.value);
+                          }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">Ao sair do campo salva automaticamente.</p>
+                    </div>
+
+                    <Button variant="default" size="sm" className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700" onClick={() => triggerReplay(c.id)}>
+                      <PlaySquare className="mr-2 h-4 w-4" /> Disparar Replay Teste
                     </Button>
                   </div>
                 </Card>
@@ -233,45 +250,18 @@ function ArenaPanel() {
 
         <TabsContent value="videos" className="mt-4 space-y-4">
           <Card className="p-6">
-            <h2 className="mb-4 text-lg font-semibold">Publicar vídeo</h2>
-            <form onSubmit={uploadVideo} className="grid gap-3 md:grid-cols-2">
-              <div>
-                <Label>Quadra</Label>
-                <select
-                  value={videoCourtId}
-                  onChange={(e) => setVideoCourtId(e.target.value)}
-                  className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="">— sem quadra —</option>
-                  {courts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <Label>Arquivo</Label>
-                <Input ref={fileRef} type="file" accept="video/*" required />
-              </div>
-              <div className="md:col-span-2">
-                <Button type="submit" disabled={uploading} className="w-full">
-                  {uploading ? "Enviando..." : <><Upload className="mr-2 h-4 w-4" />Publicar</>}
-                </Button>
-              </div>
-            </form>
-          </Card>
-          <Card className="p-6">
-            <h2 className="mb-4 text-lg font-semibold">Vídeos publicados</h2>
+            <h2 className="mb-4 text-lg font-semibold">Vídeos publicados na Arena</h2>
             <div className="grid gap-4 md:grid-cols-3">
               {videos.map((v) => (
                 <div key={v.id} className="rounded-lg border border-border bg-muted/20 p-3">
                   <video src={v.video_url} controls className="aspect-video w-full rounded-md bg-black" />
                   <div className="mt-2 flex items-center justify-between gap-2">
-                    <p className="truncate text-sm font-medium">
-                      {new Date(v.created_at).toLocaleString("pt-BR")}
-                    </p>
+                    <p className="truncate text-sm font-medium">{v.title}</p>
                     <Button size="icon" variant="ghost" onClick={() => deleteVideo(v.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                  <VideoActions url={v.video_url} title="Replay" className="mt-2" />
+                  <VideoActions url={v.video_url} title={v.title} className="mt-2" />
                 </div>
               ))}
               {videos.length === 0 && <p className="text-sm text-muted-foreground">Nenhum vídeo publicado.</p>}

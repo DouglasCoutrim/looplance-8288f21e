@@ -51,9 +51,10 @@ export const Route = createFileRoute('/api/public/agent/config')({
             .eq('id', arenaId)
             .maybeSingle(),
           supabaseAdmin
-            .from('courts')
-            .select('id, name, qr_token, rtsp_url')
-            .eq('arena_id', arenaId),
+            .from('quadras' as any)
+            .select('id, nome, rtsp_url')
+            .eq('arena_id', arenaId)
+            .then((res: any) => res, () => ({ data: [] })),
         ]);
 
         if (arenaRes.error || !arenaRes.data) return fail(500, 'Arena not found');
@@ -70,11 +71,7 @@ export const Route = createFileRoute('/api/public/agent/config')({
             generated_at: new Date().toISOString(),
             config_version: (arenaRes.data as any).config_version ?? 0,
             arena: arenaRes.data,
-            cameras: [],
-            buttons: [],
-            boards: [],
-            courts: courtsRes.data ?? [],
-            court_cameras: [],
+            quadras: courtsRes.data ?? [],
           }),
           { status: 200, headers: cors },
         );

@@ -25,6 +25,7 @@ interface Arena {
   retention_days: number | null;
 }
 interface Sponsor { id: string; name: string; logo_url: string; link_url: string | null; display_order: number }
+interface CamRow { id: string; name: string; rtsp_url: string; button_id: string | null }
 interface UserRow { user_id: string; role: string; full_name: string | null }
 
 function ArenaDetailPage() {
@@ -48,9 +49,7 @@ function ArenaDetailPage() {
       return;
     }
     setArena(a as Arena | null);
-    const [{ data: ur, error: urErr }] = await Promise.all([
-      supabase.from("user_roles").select("user_id,role").eq("arena_id", id),
-    ]);
+    const { data: ur, error: urErr } = await supabase.from("user_roles").select("user_id,role").eq("arena_id", id);
     if (urErr) setLoadError(urErr.message);
     const rows = (ur ?? []) as { user_id: string; role: string }[];
     if (rows.length) {
@@ -134,7 +133,7 @@ function ArenaDetailPage() {
 
 /* -------------------------------- Quadras -------------------------------- */
 
-interface Court { id: string; name: string; qr_token: string; rtsp_url: string | null }
+interface Court { id: string; name: string; qr_token: string }
 
 function CourtsCard({ arenaId }: { arenaId: string }) {
   const [list, setList] = useState<Court[]>([]);
@@ -142,8 +141,13 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
   const [busy, setBusy] = useState(false);
 
   async function load() {
-    const { data: c } = await supabase.from("courts").select("id,name,qr_token,rtsp_url").eq("arena_id", arenaId).order("name");
-    setList((c ?? []) as Court[]);
+    const { data: q } = await supabase.from("quadras").select("id,nome").eq("arena_id", arenaId).order("nome");
+    const mapped = (q ?? []).map((row: any) => ({
+      id: row.id,
+      name: row.nome,
+      qr_token: row.id
+    }));
+    setList(mapped as Court[]);
   }
   useEffect(() => { load(); }, [arenaId]);
 
@@ -160,41 +164,32 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
     e.preventDefault();
     if (!name.trim()) return toast.error("Informe o nome");
     setBusy(true);
-    const { error } = await supabase.from("courts").insert({ arena_id: arenaId, name: name.trim() });
+    const { error } = await supabase.from("quadras").insert({ arena_id: arenaId, nome: name.trim() });
     setBusy(false);
     if (error) return toast.error(error.message);
     setName(""); toast.success("Quadra criada"); load(); notify("courts.updated");
   }
 
   async function remove(c: Court) {
-    if (!confirm(`Remover quadra "${c.name}"? Isso também remove vínculos com câmeras.`)) return;
-    const { error } = await supabase.from("courts").delete().eq("id", c.id);
+    if (!confirm(`Remover quadra "${c.name}"? Isso também remove vídeos.`)) return;
+    const { error } = await supabase.from("quadras").delete().eq("id", c.id);
     if (error) return toast.error(error.message);
     load(); notify("courts.updated");
   }
 
-  async function updateCourt(c: Court, updates: Partial<Court>) {
-    const { error } = await supabase.from("courts").update(updates).eq("id", c.id);
+  async function rename(c: Court, newName: string) {
+    const n = newName.trim();
+    if (!n || n === c.name) return;
+    const { error } = await supabase.from("quadras").update({ nome: n }).eq("id", c.id);
     if (error) return toast.error(error.message);
     load(); notify("courts.updated");
   }
-
-  async function testReplay(courtId: string) {
-    const { error } = await supabase.from("arena_buttons").insert({
-      arena_id: arenaId,
-      quadra_id: courtId,
-      status: "disparado",
-    });
-    if (error) return toast.error(error.message);
-    toast.success("Sinal de gatilho enviado com sucesso!");
-  }
-
 
   return (
     <Card className="p-6">
       <h2 className="mb-1 text-lg font-semibold">Quadras desta arena</h2>
       <p className="mb-4 text-sm text-muted-foreground">
-        Cadastre as quadras e defina o link RTSP de cada uma.
+        Cadastre as quadras. O nome aparece nos replays.
       </p>
 
       <form onSubmit={add} className="mb-6 grid gap-2 md:grid-cols-[1fr_auto]">
@@ -208,30 +203,12 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
         <ul className="space-y-2">
           {list.map((c) => {
             return (
-              <li key={c.id} className="grid gap-4 rounded-lg border border-border p-4 md:grid-cols-[1fr_2fr_auto] md:items-center">
-                <div className="space-y-1">
-                  <Label className="text-xs">Nome da Quadra</Label>
-                  <Input
-                    defaultValue={c.name}
-                    onBlur={(e) => updateCourt(c, { name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">URL RTSP</Label>
-                  <Input
-                    defaultValue={c.rtsp_url || ""}
-                    placeholder="rtsp://..."
-                    onBlur={(e) => updateCourt(c, { rtsp_url: e.target.value })}
-                  />
-                </div>
-                <div className="flex items-end gap-2">
-                  <Button size="sm" variant="outline" onClick={() => testReplay(c.id)}>
-                    Testar Replay
-                  </Button>
-                  <Button size="icon" variant="ghost" onClick={() => remove(c)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+              <li key={c.id} className="grid gap-2 rounded-lg border border-border p-3 md:grid-cols-[1fr_auto] md:items-center">
+                <Input
+                  defaultValue={c.name}
+                  onBlur={(e) => rename(c, e.target.value)}
+                />
+                <Button size="icon" variant="ghost" onClick={() => remove(c)}><Trash2 className="h-4 w-4" /></Button>
               </li>
             );
           })}
@@ -240,7 +217,6 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
     </Card>
   );
 }
-
 
 /* ----------------------------- Patrocinadores ----------------------------- */
 
