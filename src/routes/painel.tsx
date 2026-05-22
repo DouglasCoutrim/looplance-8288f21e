@@ -44,7 +44,7 @@ function ArenaPanel() {
     const [{ data: a }, { data: c }, { data: v }, { data: cams }, { data: cc }] = await Promise.all([
       supabase.from("arenas").select("*").eq("id", adminArenaId).maybeSingle(),
       supabase.from("courts").select("*").eq("arena_id", adminArenaId).order("name"),
-      supabase.from("videos").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }),
+      supabase.from("replays").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }),
       supabase.from("cameras").select("id,name").eq("arena_id", adminArenaId).order("name"),
       supabase.from("court_cameras").select("id,court_id,camera_id").eq("arena_id", adminArenaId),
     ]);
