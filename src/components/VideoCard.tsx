@@ -40,7 +40,7 @@ export const VideoCard = ({ id, videoUrl, createdAt, arenaName, quadraName }: Vi
           className="h-full w-full object-cover"
           controls
           playsInline
-          onPlay={() => addPoints(5, 'Assistindo um lance!')}
+          onPlay={() => addPoints(10, 'Assistindo um lance!')}
         />
         <div className="absolute top-4 left-4 pointer-events-none">
           <div className="flex items-center gap-2 bg-black/50 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
