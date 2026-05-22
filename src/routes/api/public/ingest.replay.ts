@@ -40,10 +40,7 @@ export const Route = createFileRoute('/api/public/ingest/replay')({
         }
 
         const arenaId = String(form.get('arena_id') || '').trim();
-        const title = String(form.get('title') || '').trim().slice(0, 200) || 'Replay';
         const courtId = (form.get('court_id') ? String(form.get('court_id')) : '').trim() || null;
-        const durationRaw = form.get('duration_seconds');
-        const duration = durationRaw ? Math.max(1, Math.min(3600, Number(durationRaw) | 0)) : null;
         const file = form.get('file');
 
         if (!/^[0-9a-f-]{36}$/i.test(arenaId)) return fail(400, 'Invalid arena_id');
@@ -66,7 +63,7 @@ export const Route = createFileRoute('/api/public/ingest/replay')({
         // 4) Optional: validate court belongs to arena
         if (courtId) {
           const { data: court } = await supabaseAdmin
-            .from('courts')
+            .from('courts' as any)
             .select('id')
             .eq('id', courtId)
             .eq('arena_id', arenaId)
@@ -87,15 +84,13 @@ export const Route = createFileRoute('/api/public/ingest/replay')({
         const { data: pub } = supabaseAdmin.storage.from('arena-videos').getPublicUrl(objectPath);
         const videoUrl = pub.publicUrl;
 
-        // 6) Insert video row
+        // 6) Insert video row (into replays table)
         const { data: video, error: insErr } = await supabaseAdmin
-          .from('videos')
+          .from('replays' as any)
           .insert({
             arena_id: arenaId,
             court_id: courtId,
-            title,
             video_url: videoUrl,
-            duration_seconds: duration,
           })
           .select('id')
           .single();
@@ -114,7 +109,7 @@ export const Route = createFileRoute('/api/public/ingest/replay')({
         return new Response(
           JSON.stringify({
             ok: true,
-            video_id: video.id,
+            video_id: (video as any).id,
             video_url: videoUrl,
             path: objectPath,
           }),
