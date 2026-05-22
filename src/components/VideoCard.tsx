@@ -68,7 +68,7 @@ export const VideoCard = ({ id, videoUrl, createdAt, arenaName, quadraName }: Vi
           <div className="flex gap-2">
             <button 
               onClick={handleShare}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 backdrop-blur-md text-primary border border-primary/30 transition-all active:scale-95"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/20 backdrop-blur-md text-accent border border-accent/30 transition-all active:scale-95"
             >
               <Share2 className="h-5 w-5" />
             </button>

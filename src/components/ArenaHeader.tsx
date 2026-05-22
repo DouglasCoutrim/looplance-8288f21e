@@ -49,10 +49,14 @@ export const ArenaHeader = ({
     <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md pb-4 pt-6 px-4 border-b border-border/50">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center text-primary-foreground font-bold">
-            LL
-          </div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">LoopLance</h1>
+          <img 
+            src="/logo-mark.png" 
+            alt="LoopLance Logo" 
+            className="h-8 w-auto object-contain"
+          />
+          <span className="text-xl font-bold tracking-tight text-foreground bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            LoopLance
+          </span>
         </div>
         <div className="flex items-center gap-2 bg-secondary/50 px-3 py-1.5 rounded-full border border-border/50">
           <User className="h-4 w-4 text-primary" />
