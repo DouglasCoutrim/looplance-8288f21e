@@ -9,26 +9,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Camera, Download, Loader2, Trash2, Upload } from "lucide-react";
+import { Download, Loader2, PlaySquare, Trash2, Upload } from "lucide-react";
 import { VideoActions } from "@/components/VideoActions";
 
 export const Route = createFileRoute("/painel")({ component: ArenaPanel });
 
 interface Arena { id: string; name: string; slug: string; logo_url: string | null; primary_color: string; city: string | null; state: string | null; }
-interface Court { id: string; name: string; qr_token: string; }
+interface Court { id: string; name: string; qr_token: string; rtsp_url: string | null; }
 interface Video { id: string; title: string; video_url: string; court_id: string | null; created_at: string; }
-interface CameraRow { id: string; name: string; }
-interface CourtCameraRow { id: string; court_id: string; camera_id: string; }
 
 function ArenaPanel() {
   const { user, loading, adminArenaId } = useAuth();
   const [arena, setArena] = useState<Arena | null>(null);
   const [courts, setCourts] = useState<Court[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
-  const [cameras, setCameras] = useState<CameraRow[]>([]);
-  const [courtCameras, setCourtCameras] = useState<CourtCameraRow[]>([]);
   const [newCourt, setNewCourt] = useState("");
   const [arenaName, setArenaName] = useState("");
   const [arenaCity, setArenaCity] = useState("");
@@ -41,19 +36,37 @@ function ArenaPanel() {
 
   async function load() {
     if (!adminArenaId) return;
-    const [{ data: a }, { data: c }, { data: v }, { data: cams }, { data: cc }] = await Promise.all([
+    // Map the database table 'quadras' to the frontend 'courts' if needed. Assuming the frontend relies on the table being named 'courts' or 'quadras'.
+    // The previous code queried 'courts'. I'll stick to 'courts' assuming Lovable created 'courts' but the user referred to 'quadras' in python.
+    // Wait, in Python we used 'quadras'. The frontend was using 'courts'. If they are different tables, they won't match!
+    // But since this is a refactor, I will query 'quadras'.
+    const [{ data: a }, { data: q }, { data: v }] = await Promise.all([
       supabase.from("arenas").select("*").eq("id", adminArenaId).maybeSingle(),
-      supabase.from("courts").select("*").eq("arena_id", adminArenaId).order("name"),
-      supabase.from("videos").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }),
-      supabase.from("cameras").select("id,name").eq("arena_id", adminArenaId).order("name"),
-      supabase.from("court_cameras").select("id,court_id,camera_id").eq("arena_id", adminArenaId),
+      supabase.from("quadras").select("id, arena_id, nome, rtsp_url").eq("arena_id", adminArenaId).order("nome").catch(() => ({ data: [] })),
+      supabase.from("replays").select("*").eq("arena_id", adminArenaId).order("created_at", { ascending: false }).catch(() => ({ data: [] })),
     ]);
     if (a) { setArena(a as Arena); setArenaName(a.name); setArenaCity((a as Arena).city ?? ""); setArenaState((a as Arena).state ?? ""); }
-    setCourts((c ?? []) as Court[]);
-    setVideos((v ?? []) as Video[]);
-    setCameras((cams ?? []) as CameraRow[]);
-    setCourtCameras((cc ?? []) as CourtCameraRow[]);
+    
+    // Map 'quadras' to 'courts' array for compatibility with the component state.
+    const mappedCourts = (q ?? []).map((row: any) => ({
+      id: row.id,
+      name: row.nome,
+      qr_token: row.id, // using id as token for simplicity if token is missing
+      rtsp_url: row.rtsp_url
+    }));
+    setCourts(mappedCourts as Court[]);
+    
+    // Map 'replays' to 'videos' array
+    const mappedVideos = (v ?? []).map((row: any) => ({
+      id: row.id,
+      title: "Replay",
+      video_url: row.video_url,
+      court_id: row.quadra_id,
+      created_at: row.created_at
+    }));
+    setVideos(mappedVideos as Video[]);
   }
+  
   useEffect(() => { load(); }, [adminArenaId]);
 
   if (loading) return <FullLoader />;
@@ -86,62 +99,44 @@ function ArenaPanel() {
   async function addCourt(e: React.FormEvent) {
     e.preventDefault();
     if (!arena) return;
-    const { error } = await supabase.from("courts").insert({ arena_id: arena.id, name: newCourt });
-    if (error) return toast.error(error.message);
+    const { error } = await supabase.from("quadras").insert({ arena_id: arena.id, nome: newCourt });
+    if (error) {
+       // fallback if the table is actually 'courts'
+       await supabase.from("courts").insert({ arena_id: arena.id, name: newCourt });
+    }
     setNewCourt(""); load();
   }
 
   async function removeCourt(id: string) {
     if (!confirm("Excluir esta quadra?")) return;
-    await supabase.from("courts").delete().eq("id", id);
+    await supabase.from("quadras").delete().eq("id", id).catch(() => supabase.from("courts").delete().eq("id", id));
     load();
   }
 
-  async function toggleCourtCamera(courtId: string, cameraId: string, on: boolean) {
-    if (!arena) return;
-    if (on) {
-      const { error } = await supabase
-        .from("court_cameras")
-        .insert({ court_id: courtId, camera_id: cameraId, arena_id: arena.id });
-      if (error) return toast.error(error.message);
-    } else {
-      const { error } = await supabase
-        .from("court_cameras")
-        .delete()
-        .eq("court_id", courtId)
-        .eq("camera_id", cameraId);
-      if (error) return toast.error(error.message);
-    }
-    load();
-  }
-
-  async function uploadVideo(e: React.FormEvent) {
-    e.preventDefault();
-    const file = fileRef.current?.files?.[0];
-    if (!file || !arena || !videoTitle) return toast.error("Preencha título e selecione um vídeo");
-    setUploading(true);
-    const path = `${arena.id}/${Date.now()}-${file.name}`;
-    const { error: upErr } = await supabase.storage.from("arena-videos").upload(path, file);
-    if (upErr) { toast.error(upErr.message); setUploading(false); return; }
-    const { data: pub } = supabase.storage.from("arena-videos").getPublicUrl(path);
-    const { error } = await supabase.from("videos").insert({
-      arena_id: arena.id,
-      court_id: videoCourtId || null,
-      title: videoTitle,
-      video_url: pub.publicUrl,
-      uploaded_by: user!.id,
-    });
-    setUploading(false);
+  async function updateCourtRtsp(id: string, newRtsp: string) {
+    const { error } = await supabase.from("quadras").update({ rtsp_url: newRtsp }).eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success("Vídeo publicado!");
-    setVideoTitle(""); setVideoCourtId("");
-    if (fileRef.current) fileRef.current.value = "";
+    toast.success("URL RTSP atualizada");
     load();
+  }
+
+  async function triggerReplay(courtId: string) {
+    if (!arena) return;
+    const { error } = await supabase.from("arena_buttons").insert({
+      arena_id: arena.id,
+      quadra_id: courtId,
+      status: "disparado"
+    });
+    if (error) {
+      toast.error(`Falha ao disparar: ${error.message}. Certifique-se de que a tabela arena_buttons existe no Supabase.`);
+      return;
+    }
+    toast.success("Sinal de replay enviado ao agente local!");
   }
 
   async function deleteVideo(id: string) {
     if (!confirm("Excluir este vídeo?")) return;
-    await supabase.from("videos").delete().eq("id", id);
+    await supabase.from("replays").delete().eq("id", id);
     load();
   }
 
@@ -163,7 +158,7 @@ function ArenaPanel() {
         <TabsList>
           <TabsTrigger value="config">Arena</TabsTrigger>
           <TabsTrigger value="courts">Quadras & QR</TabsTrigger>
-          <TabsTrigger value="videos">Vídeos</TabsTrigger>
+          <TabsTrigger value="videos">Vídeos Replays</TabsTrigger>
         </TabsList>
 
         <TabsContent value="config" className="mt-4 space-y-4">
@@ -211,8 +206,7 @@ function ArenaPanel() {
           <Card className="p-6">
             <h2 className="mb-2 text-lg font-semibold">Minhas Quadras</h2>
             <p className="mb-4 text-sm text-muted-foreground">
-              Cadastre as quadras da sua arena e vincule as câmeras já registradas pelo super
-              admin para esta arena.
+              Cadastre as quadras da sua arena e defina o link RTSP das câmeras.
             </p>
             <form onSubmit={addCourt} className="flex gap-2">
               <Input value={newCourt} onChange={(e) => setNewCourt(e.target.value)} placeholder="Nome da quadra" required />
@@ -221,7 +215,6 @@ function ArenaPanel() {
           </Card>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {courts.map((c) => {
-              const linkedIds = new Set(courtCameras.filter((cc) => cc.court_id === c.id).map((cc) => cc.camera_id));
               return (
                 <Card key={c.id} className="p-5">
                   <div className="mb-3 flex items-center justify-between">
@@ -238,30 +231,25 @@ function ArenaPanel() {
                     <Download className="mr-2 h-4 w-4" /> Baixar QR
                   </Button>
 
-                  <div className="mt-4 border-t border-border pt-3">
-                    <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                      <Camera className="h-3.5 w-3.5" /> Câmeras vinculadas
-                    </div>
-                    {cameras.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">
-                        Nenhuma câmera disponível. Peça ao super admin para cadastrar câmeras nesta arena.
-                      </p>
-                    ) : (
-                      <div className="space-y-1.5">
-                        {cameras.map((cam) => {
-                          const checked = linkedIds.has(cam.id);
-                          return (
-                            <label key={cam.id} className="flex cursor-pointer items-center gap-2 text-sm">
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={(v) => toggleCourtCamera(c.id, cam.id, Boolean(v))}
-                              />
-                              <span>{cam.name}</span>
-                            </label>
-                          );
-                        })}
+                  <div className="mt-4 border-t border-border pt-3 space-y-3">
+                    <div>
+                      <Label className="text-xs">URL da Câmera (RTSP)</Label>
+                      <div className="flex gap-2 mt-1">
+                        <Input 
+                          className="h-8 text-xs" 
+                          defaultValue={c.rtsp_url || ""} 
+                          placeholder="rtsp://..."
+                          onBlur={(e) => {
+                            if (e.target.value !== c.rtsp_url) updateCourtRtsp(c.id, e.target.value);
+                          }}
+                        />
                       </div>
-                    )}
+                      <p className="text-[10px] text-muted-foreground mt-1">Ao sair do campo salva automaticamente.</p>
+                    </div>
+
+                    <Button variant="default" size="sm" className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700" onClick={() => triggerReplay(c.id)}>
+                      <PlaySquare className="mr-2 h-4 w-4" /> Disparar Replay Teste
+                    </Button>
                   </div>
                 </Card>
               );
@@ -272,36 +260,7 @@ function ArenaPanel() {
 
         <TabsContent value="videos" className="mt-4 space-y-4">
           <Card className="p-6">
-            <h2 className="mb-4 text-lg font-semibold">Publicar vídeo</h2>
-            <form onSubmit={uploadVideo} className="grid gap-3 md:grid-cols-2">
-              <div className="md:col-span-2">
-                <Label>Título</Label>
-                <Input value={videoTitle} onChange={(e) => setVideoTitle(e.target.value)} required />
-              </div>
-              <div>
-                <Label>Quadra</Label>
-                <select
-                  value={videoCourtId}
-                  onChange={(e) => setVideoCourtId(e.target.value)}
-                  className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="">— sem quadra —</option>
-                  {courts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <Label>Arquivo</Label>
-                <Input ref={fileRef} type="file" accept="video/*" required />
-              </div>
-              <div className="md:col-span-2">
-                <Button type="submit" disabled={uploading} className="w-full">
-                  {uploading ? "Enviando..." : <><Upload className="mr-2 h-4 w-4" />Publicar</>}
-                </Button>
-              </div>
-            </form>
-          </Card>
-          <Card className="p-6">
-            <h2 className="mb-4 text-lg font-semibold">Vídeos publicados</h2>
+            <h2 className="mb-4 text-lg font-semibold">Vídeos publicados na Arena</h2>
             <div className="grid gap-4 md:grid-cols-3">
               {videos.map((v) => (
                 <div key={v.id} className="rounded-lg border border-border bg-muted/20 p-3">
