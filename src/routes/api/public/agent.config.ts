@@ -71,7 +71,7 @@ export const Route = createFileRoute('/api/public/agent/config')({
             generated_at: new Date().toISOString(),
             config_version: (arenaRes.data as any).config_version ?? 0,
             arena: arenaRes.data,
-            courts: courtsRes.data ?? [],
+            quadras: courtsRes.data ?? [],
           }),
           { status: 200, headers: cors },
         );
