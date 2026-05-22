@@ -133,18 +133,20 @@ function ArenaDetailPage() {
 
 /* -------------------------------- Quadras -------------------------------- */
 
-interface Court { id: string; name: string; qr_token: string }
+interface Court { id: string; name: string; rtsp_url: string | null; qr_token: string }
 
 function CourtsCard({ arenaId }: { arenaId: string }) {
   const [list, setList] = useState<Court[]>([]);
   const [name, setName] = useState("");
+  const [rtspUrl, setRtspUrl] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function load() {
-    const { data: q } = await supabase.from("courts").select("id,name").eq("arena_id", arenaId).order("name");
+    const { data: q } = await supabase.from("quadras").select("id,nome,rtsp_url").eq("arena_id", arenaId).order("nome");
     const mapped = (q ?? []).map((row: any) => ({
       id: row.id,
-      name: row.name,
+      name: row.nome,
+      rtsp_url: row.rtsp_url,
       qr_token: row.id
     }));
     setList(mapped as Court[]);
@@ -164,15 +166,19 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
     e.preventDefault();
     if (!name.trim()) return toast.error("Informe o nome");
     setBusy(true);
-    const { error } = await supabase.from("courts").insert({ arena_id: arenaId, name: name.trim() });
+    const { error } = await supabase.from("quadras").insert({
+      arena_id: arenaId,
+      nome: name.trim(),
+      rtsp_url: rtspUrl.trim() || null
+    });
     setBusy(false);
     if (error) return toast.error(error.message);
-    setName(""); toast.success("Quadra criada"); load(); notify("courts.updated");
+    setName(""); setRtspUrl(""); toast.success("Quadra criada"); load(); notify("courts.updated");
   }
 
   async function remove(c: Court) {
     if (!confirm(`Remover quadra "${c.name}"? Isso também remove vídeos.`)) return;
-    const { error } = await supabase.from("courts").delete().eq("id", c.id);
+    const { error } = await supabase.from("quadras").delete().eq("id", c.id);
     if (error) return toast.error(error.message);
     load(); notify("courts.updated");
   }
@@ -180,7 +186,15 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
   async function rename(c: Court, newName: string) {
     const n = newName.trim();
     if (!n || n === c.name) return;
-    const { error } = await supabase.from("courts").update({ name: n }).eq("id", c.id);
+    const { error } = await supabase.from("quadras").update({ nome: n }).eq("id", c.id);
+    if (error) return toast.error(error.message);
+    load(); notify("courts.updated");
+  }
+
+  async function updateRtsp(c: Court, newRtsp: string) {
+    const r = newRtsp.trim();
+    if (r === (c.rtsp_url || "")) return;
+    const { error } = await supabase.from("quadras").update({ rtsp_url: r || null }).eq("id", c.id);
     if (error) return toast.error(error.message);
     load(); notify("courts.updated");
   }
@@ -189,30 +203,57 @@ function CourtsCard({ arenaId }: { arenaId: string }) {
     <Card className="p-6">
       <h2 className="mb-1 text-lg font-semibold">Quadras desta arena</h2>
       <p className="mb-4 text-sm text-muted-foreground">
-        Cadastre as quadras. O nome aparece nos replays.
+        Cadastre as quadras e suas respectivas câmeras (URL de stream RTSP).
       </p>
 
-      <form onSubmit={add} className="mb-6 grid gap-2 md:grid-cols-[1fr_auto]">
-        <Input placeholder="Ex: Quadra 1" value={name} onChange={(e) => setName(e.target.value)} />
-        <Button type="submit" disabled={busy}>{busy ? "Criando..." : "Adicionar quadra"}</Button>
+      <form onSubmit={add} className="mb-6 grid gap-4 md:grid-cols-[2fr_3fr_auto] items-end border border-border/60 rounded-lg p-4 bg-muted/20">
+        <div className="space-y-1">
+          <Label htmlFor="new-court-name" className="text-xs font-semibold">Nome da Quadra</Label>
+          <Input id="new-court-name" placeholder="Ex: Quadra 1" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="new-court-rtsp" className="text-xs font-semibold flex items-center gap-1">
+            <Wifi className="h-3 w-3 text-emerald-500" /> URL RTSP da Câmera
+          </Label>
+          <Input id="new-court-rtsp" placeholder="rtsp://usuario:senha@ip:porta/stream" value={rtspUrl} onChange={(e) => setRtspUrl(e.target.value)} />
+        </div>
+        <Button type="submit" disabled={busy} className="w-full">{busy ? "Criando..." : "Adicionar"}</Button>
       </form>
 
       {list.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nenhuma quadra cadastrada ainda.</p>
       ) : (
-        <ul className="space-y-2">
+        <div className="space-y-3">
           {list.map((c) => {
             return (
-              <li key={c.id} className="grid gap-2 rounded-lg border border-border p-3 md:grid-cols-[1fr_auto] md:items-center">
-                <Input
-                  defaultValue={c.name}
-                  onBlur={(e) => rename(c, e.target.value)}
-                />
-                <Button size="icon" variant="ghost" onClick={() => remove(c)}><Trash2 className="h-4 w-4" /></Button>
-              </li>
+              <div key={c.id} className="grid gap-3 rounded-lg border border-border p-4 hover:border-primary/30 transition-all bg-card">
+                <div className="grid gap-3 md:grid-cols-[2fr_3fr_auto] items-end">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground font-medium">Nome da Quadra</Label>
+                    <Input
+                      defaultValue={c.name}
+                      onBlur={(e) => rename(c, e.target.value)}
+                      placeholder="Nome da quadra"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                      <Wifi className="h-3 w-3 text-muted-foreground" /> URL RTSP da Câmera
+                    </Label>
+                    <Input
+                      defaultValue={c.rtsp_url || ""}
+                      onBlur={(e) => updateRtsp(c, e.target.value)}
+                      placeholder="Não configurada"
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <Button size="icon" variant="ghost" onClick={() => remove(c)} className="text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
+                  </div>
+                </div>
+              </div>
             );
           })}
-        </ul>
+        </div>
       )}
     </Card>
   );
