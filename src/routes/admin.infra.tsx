@@ -61,61 +61,6 @@ function GlobalInfraPage() {
   );
 }
 
-          <p className="text-sm text-muted-foreground">Cadastre uma placa ARC-968 nesta arena para liberar o mapeamento.</p>
-        ) : (
-          <div className="space-y-4">
-            {arenaBoards.map((board) => {
-              const pins = arenaPins.filter((b) => b.board_id === board.id)
-                .sort((a, b) => (a.button_number ?? 0) - (b.button_number ?? 0));
-              return (
-                <div key={board.id} className="rounded-lg border border-border p-4">
-                  <p className="mb-3 font-semibold">{board.name} <span className="text-xs text-muted-foreground">· {board.serial}</span></p>
-                  <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-                    {pins.map((p) => {
-                      const linkedCam = cameras.find((c) => c.button_id === p.id) ?? cameras.find((c) => c.id === p.camera_id);
-                      return (
-                        <div key={p.id} className="flex items-center gap-2 rounded-md border border-border p-2">
-                          <span className="inline-flex h-8 min-w-[3rem] items-center justify-center rounded bg-primary/15 px-2 text-xs font-semibold text-primary">
-                            {p.hardware_pin}
-                          </span>
-                          <Select
-                            value={linkedCam?.id ?? "none"}
-                            onValueChange={(v) => assign(p.id, v === "none" ? null : v)}
-                          >
-                            <SelectTrigger className="h-8 flex-1 text-xs"><SelectValue placeholder="Selecionar câmera" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">— Livre —</SelectItem>
-                              {arenaCameras.map((c) => (
-                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Card>
-
-      <Card className="p-6">
-        <div className="mb-2 flex items-center justify-between">
-          <div>
-            <Label>Mapa pino → câmera (JSON)</Label>
-            <p className="text-xs text-muted-foreground">Gerado dinamicamente a partir do mapeamento acima. Cole no script Python local da arena.</p>
-          </div>
-          <Button size="sm" variant="outline" onClick={copyJson} disabled={map.length === 0}>Copiar JSON</Button>
-        </div>
-        <pre className="max-h-96 overflow-auto rounded-lg bg-muted p-4 text-xs leading-relaxed text-foreground">{json}</pre>
-        {map.length === 0 && <p className="mt-2 text-xs text-muted-foreground">Nada para exportar ainda.</p>}
-      </Card>
-    </div>
-  );
-}
-
 /* ----------------------------- Retenção de vídeos ----------------------------- */
 
 function RetentionCard() {
