@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Download, Loader2, PlaySquare, Trash2, Upload } from "lucide-react";
+import { Download, Loader2, PlaySquare, Trash2, Upload, Wifi, ImagePlus } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VideoActions } from "@/components/VideoActions";
 
 export const Route = createFileRoute("/painel")({ component: ArenaPanel });
@@ -146,6 +147,8 @@ function ArenaPanel() {
         <TabsList>
           <TabsTrigger value="config">Arena</TabsTrigger>
           <TabsTrigger value="courts">Quadras & QR</TabsTrigger>
+          <TabsTrigger value="cameras">Câmeras</TabsTrigger>
+          <TabsTrigger value="boards">Placas Zero Delay</TabsTrigger>
           <TabsTrigger value="videos">Vídeos Replays</TabsTrigger>
         </TabsList>
 
@@ -247,6 +250,14 @@ function ArenaPanel() {
           </div>
         </TabsContent>
 
+        <TabsContent value="cameras" className="mt-4 space-y-4">
+          <CamerasCard arenaId={adminArenaId} />
+        </TabsContent>
+
+        <TabsContent value="boards" className="mt-4 space-y-4">
+          <BoardsCard arenaId={adminArenaId} />
+        </TabsContent>
+
         <TabsContent value="videos" className="mt-4 space-y-4">
           <Card className="p-6">
             <h2 className="mb-4 text-lg font-semibold">Vídeos publicados na Arena</h2>
@@ -269,6 +280,226 @@ function ArenaPanel() {
         </TabsContent>
       </Tabs>
     </AppShell>
+  );
+}
+
+/* -------------------------- Componentes de Gestão -------------------------- */
+
+interface ZeroDelayBoard {
+  id: string;
+  nome: string;
+  created_at: string;
+}
+
+function BoardsCard({ arenaId }: { arenaId: string }) {
+  const [list, setList] = useState<ZeroDelayBoard[]>([]);
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function load() {
+    const { data } = await supabase
+      .from("placas_zero_delay")
+      .select("*")
+      .eq("arena_id", arenaId)
+      .order("created_at", { ascending: false });
+    setList((data ?? []) as ZeroDelayBoard[]);
+  }
+
+  useEffect(() => { load(); }, [arenaId]);
+
+  async function add(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return toast.error("Informe o nome da placa");
+    setBusy(true);
+    const { error } = await supabase.from("placas_zero_delay").insert({
+      arena_id: arenaId,
+      nome: name.trim(),
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    setName("");
+    toast.success("Placa Zero-Delay cadastrada! 12 botões gerados.");
+    load();
+  }
+
+  async function remove(board: ZeroDelayBoard) {
+    if (!confirm(`Remover placa "${board.nome}"?`)) return;
+    const { error } = await supabase.from("placas_zero_delay").delete().eq("id", board.id);
+    if (error) return toast.error(error.message);
+    toast.success("Placa removida");
+    load();
+  }
+
+  return (
+    <Card className="p-6">
+      <h2 className="mb-1 text-lg font-semibold">Placas Zero-Delay</h2>
+      <p className="mb-4 text-sm text-muted-foreground">Cadastre as placas de controle físico de botões.</p>
+      <form onSubmit={add} className="mb-6 grid gap-4 md:grid-cols-[1fr_auto] items-end border border-border/60 rounded-lg p-4 bg-muted/20">
+        <div className="space-y-1">
+          <Label className="text-xs font-semibold">Nome da Placa</Label>
+          <Input placeholder="Ex: Placa Quadra 1" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <Button type="submit" disabled={busy}>{busy ? "Salvando..." : "Cadastrar"}</Button>
+      </form>
+      {list.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhuma placa cadastrada.</p>
+      ) : (
+        <div className="space-y-4">
+          {list.map((b) => (
+            <div key={b.id} className="flex items-center justify-between rounded-lg border border-border p-4 bg-card">
+              <div>
+                <h3 className="font-semibold text-sm">{b.nome}</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">12 botões ativos</p>
+              </div>
+              <Button size="icon" variant="ghost" onClick={() => remove(b)} className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+interface Camera {
+  id: string;
+  nome: string;
+  rtsp_url: string;
+  botao_id: string | null;
+  quadra_id: string;
+  created_at: string;
+}
+
+interface ButtonRow {
+  id: string;
+  label: string;
+  board_name?: string;
+  status: string;
+}
+
+function CamerasCard({ arenaId }: { arenaId: string }) {
+  const [list, setList] = useState<(Camera & { button_label?: string; court_name?: string })[]>([]);
+  const [buttons, setButtons] = useState<ButtonRow[]>([]);
+  const [courts, setCourts] = useState<{ id: string; name: string }[]>([]);
+  const [name, setName] = useState("");
+  const [rtspUrl, setRtspUrl] = useState("");
+  const [selectedButtonId, setSelectedButtonId] = useState<string>("none");
+  const [selectedCourtId, setSelectedCourtId] = useState<string>("none");
+  const [busy, setBusy] = useState(false);
+
+  async function load() {
+    const { data: cams } = await supabase.from("cameras").select("*").eq("arena_id", arenaId).order("nome");
+    const { data: cts } = await supabase.from("quadras").select("id, nome").eq("arena_id", arenaId).order("nome");
+    setCourts((cts ?? []).map((row: any) => ({ id: row.id, name: row.nome })));
+    const { data: boards } = await supabase.from("placas_zero_delay").select("id, nome").eq("arena_id", arenaId);
+    const boardsMap = new Map((boards ?? []).map((b: any) => [b.id, b.nome]));
+    const { data: btns } = await supabase.from("botoes_zero_delay").select("id, numero_botao, placa_id, status").in("placa_id", (boards ?? []).map(b => b.id));
+    const mappedButtons = (btns ?? []).map((b: any) => ({
+      id: b.id,
+      label: `Botão ${b.numero_botao}${b.status === 'em uso' ? ' (Em Uso)' : ''}`,
+      board_name: boardsMap.get(b.placa_id),
+      status: b.status
+    }));
+    setButtons(mappedButtons);
+    const buttonsMap = new Map(mappedButtons.map((b) => [b.id, b]));
+    const courtsMap = new Map((cts ?? []).map((c: any) => [c.id, c.nome]));
+    const camerasList = (cams ?? []).map((c: any) => {
+      const btn = c.botao_id ? buttonsMap.get(c.botao_id) : null;
+      return {
+        ...c,
+        button_label: btn ? (btn.board_name ? `${btn.board_name} - ${btn.label}` : btn.label) : "Nenhum",
+        court_name: courtsMap.get(c.quadra_id) ?? "Nenhuma"
+      };
+    }) as (Camera & { button_label: string; court_name: string })[];
+    setList(camerasList);
+  }
+
+  useEffect(() => { load(); }, [arenaId]);
+
+  async function add(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return toast.error("Informe o nome");
+    if (!rtspUrl.trim()) return toast.error("Informe a URL RTSP");
+    if (selectedCourtId === "none") return toast.error("Selecione uma quadra");
+    setBusy(true);
+    const { error } = await supabase.from("cameras").insert({
+      arena_id: arenaId,
+      nome: name.trim(),
+      rtsp_url: rtspUrl.trim(),
+      botao_id: selectedButtonId === "none" ? null : selectedButtonId,
+      quadra_id: selectedCourtId
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Câmera cadastrada!");
+    setName(""); setRtspUrl(""); setSelectedButtonId("none"); setSelectedCourtId("none");
+    load();
+  }
+
+  async function remove(c: Camera) {
+    if (!confirm(`Remover câmera "${c.nome}"?`)) return;
+    const { error } = await supabase.from("cameras").delete().eq("id", c.id);
+    if (error) return toast.error(error.message);
+    toast.success("Câmera removida");
+    load();
+  }
+
+  return (
+    <Card className="p-6">
+      <h2 className="mb-1 text-lg font-semibold">Câmeras</h2>
+      <form onSubmit={add} className="mb-6 space-y-4 border border-border/60 rounded-lg p-4 bg-muted/20">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-1">
+            <Label className="text-xs font-semibold">Nome</Label>
+            <Input placeholder="Ex: Câmera Lateral" value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs font-semibold">Botão Físico</Label>
+            <Select value={selectedButtonId} onValueChange={setSelectedButtonId}>
+              <SelectTrigger><SelectValue placeholder="Selecione um botão" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhum</SelectItem>
+                {buttons.filter(b => b.status === 'disponivel' || list.some(c => c.botao_id === b.id)).map((b) => (
+                  <SelectItem key={b.id} value={b.id}>{b.board_name ? `${b.board_name} - ${b.label}` : b.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs font-semibold">URL RTSP</Label>
+          <Input placeholder="rtsp://..." value={rtspUrl} onChange={(e) => setRtspUrl(e.target.value)} />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs font-semibold">Quadra</Label>
+          <Select value={selectedCourtId} onValueChange={setSelectedCourtId}>
+            <SelectTrigger><SelectValue placeholder="Selecione uma quadra" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Selecione uma quadra</SelectItem>
+              {courts.map((court) => (
+                <SelectItem key={court.id} value={court.id}>{court.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button type="submit" disabled={busy}>{busy ? "Salvando..." : "Adicionar Câmera"}</Button>
+      </form>
+      {list.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhuma câmera cadastrada.</p>
+      ) : (
+        <div className="space-y-4">
+          {list.map((c) => (
+            <div key={c.id} className="rounded-lg border border-border p-4 bg-card flex justify-between items-start">
+              <div className="space-y-1">
+                <h3 className="font-semibold text-sm">{c.nome}</h3>
+                <p className="text-xs text-muted-foreground font-mono truncate max-w-md">{c.rtsp_url}</p>
+                <p className="text-[10px] text-primary">Botão: {c.button_label} · Quadra: {c.court_name}</p>
+              </div>
+              <Button size="icon" variant="ghost" onClick={() => remove(c)} className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 
