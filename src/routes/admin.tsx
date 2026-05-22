@@ -49,7 +49,7 @@ function AdminPage() {
     const { data: a } = await supabase.from("arenas").select("*").order("created_at", { ascending: false });
     setArenas((a ?? []) as ArenaRow[]);
     const [{ count: c }, { count: v }, { count: u }] = await Promise.all([
-      supabase.from("courts").select("*", { count: "exact", head: true }),
+      supabase.from("quadras").select("*", { count: "exact", head: true }),
       supabase.from("replays").select("*", { count: "exact", head: true }),
       supabase.from("profiles").select("*", { count: "exact", head: true }),
     ]);

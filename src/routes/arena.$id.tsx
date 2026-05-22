@@ -63,8 +63,8 @@ function ArenaDashboard() {
   useEffect(() => {
     if (!arena?.id) return;
     (async () => {
-      const { data: q } = await supabase.from("courts").select("id,name").eq("arena_id", arena.id).order("name");
-      setQuadras(((q ?? []) as { id: string; name: string }[]).map((court) => ({ id: court.id, nome: court.name })));
+      const { data: q } = await supabase.from("quadras").select("id,nome").eq("arena_id", arena.id).order("nome");
+      setQuadras(((q ?? []) as { id: string; nome: string }[]).map((court) => ({ id: court.id, nome: court.nome })));
 
       let rows: any[] = [];
       
