@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { ArrowLeft, Cable, Camera as CameraIcon, Cpu, Loader2, Trash2, Wifi, WifiOff, Clock } from "lucide-react";
 
+export const Route = createFileRoute("/admin/infra")({ component: GlobalInfraPage });
+
 interface ArenaRow { id: string; name: string; slug: string }
 
 function GlobalInfraPage() {
